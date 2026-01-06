@@ -1,4 +1,4 @@
-package de.htw.saar.wordle;
+package de.htw.saar.wordle.game;
 
 import org.junit.jupiter.api.Test;
 
