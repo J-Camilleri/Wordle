@@ -9,8 +9,24 @@ import java.io.IOException;
 
 public class Wordle {
 
-    private String[][] wordleGrid;
+    private String wordleWord; //TODO Keine Ahnung ob ich das hier brauch
+    private char  [][] wordleGrid;
+    private char [][] wordStatusGrid;
+    private int attempt = 0;
+    public static final String RESET = "\u001B[0m";
+    public static final String GREEN = "\u001B[32m";
+    public static final String YELLOW = "\u001B[33m";
+    public static final String GRAY = "\u001B[90m";
     private static final JLanguageTool TOOL = createTool();
+    private WordProvider provider;
+
+
+    public Wordle(WordProvider provider) {
+        this.provider = provider;
+        this.wordleWord = provider.getRandomWord();
+        wordleGrid = new char[6][wordleWord.length()];
+        wordStatusGrid = new char[6][wordleWord.length()];
+    }
 
     private static JLanguageTool createTool() {
         JLanguageTool tool = new JLanguageTool(Languages.getLanguageForShortCode("de-DE"));
@@ -24,6 +40,70 @@ public class Wordle {
         }
         return tool;
     }
+
+
+    public void checkWord(String userInput) throws IOException {
+        userInput = userInput.toUpperCase();
+        int length = wordleWord.length();
+        boolean[] used = new boolean[length];
+
+        if(wordExists(userInput)){
+
+            for(int i = 0; i < length; i++){
+                wordleGrid[attempt][i] = userInput.charAt(i);
+            }
+
+            for(int i = 0; i < length; i++){
+                if(userInput.charAt(i) == wordleWord.charAt(i)){
+                 wordStatusGrid[attempt][i] = 'G';
+                 used[i] = true;
+                }
+            }
+
+            for (int i = 0; i < length; i++) {
+                if (wordStatusGrid[attempt][i] == 'G') continue;
+
+                for (int j = 0; j < length; j++) {
+                    if (!used[j] && userInput.charAt(i) == wordleWord.charAt(j)) {
+                        wordStatusGrid[attempt][i] = 'Y';
+                        used[j] = true;
+                        break;
+                    }
+                }
+            }
+
+            for (int i = 0; i < length; i++) {
+                if (wordStatusGrid[attempt][i] == '\0') {
+                    wordStatusGrid[attempt][i] = 'X';
+                }
+            }
+
+            attempt++;
+
+            printBoard();
+        }
+    }
+
+    //TODO Keine Ahnung ob diese Methode in Wordle kommt oder in Dialog (tendiere aber zu Wordle)
+    public void printBoard() {
+        for (int r = 0; r < attempt; r++) { // zeigt jetzt nur die aktuellen Versuche an
+            for (int c = 0; c < wordleGrid[r].length; c++) {
+
+                char letter = wordleGrid[r][c];
+                char s = wordStatusGrid[r][c];
+
+                switch (s) {
+                    case 'G' -> System.out.print(GREEN + letter + RESET + " ");
+                    case 'Y' -> System.out.print(YELLOW + letter + RESET + " ");
+                    case 'X' -> System.out.print(GRAY + letter + RESET + " ");
+                    default -> System.out.print(". ");
+                }
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+
 
     public static boolean wordExists(String userInput) throws IOException {
         //TODO die System out prints in Dialog einbringen (Hier nur zum Debuggen genutzt)
@@ -44,5 +124,21 @@ public class Wordle {
         }
 
         return TOOL.check(userInput).isEmpty();
+    }
+
+    public char[][] getWordleGrid() {
+        return wordleGrid;
+    }
+
+    public void setWordleGrid(char[][] wordleGrid) {
+        this.wordleGrid = wordleGrid;
+    }
+
+    public char[][] getWordStatusGrid() {
+        return wordStatusGrid;
+    }
+
+    public void setWordStatusGrid(char[][] wordStatusGrid) {
+        this.wordStatusGrid = wordStatusGrid;
     }
 }

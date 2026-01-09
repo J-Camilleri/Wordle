@@ -6,7 +6,96 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+
+class MockWordProvider implements WordProvider {
+    @Override
+    public String getRandomWord() {
+        return "TIERE"; // Wort für die ganzen Tests
+    }
+}
+
 class WordleTest {
+
+
+    @Test
+    void testCheckWord_AllGreen() throws IOException {
+        Wordle game = new Wordle(new MockWordProvider());
+
+        game.checkWord("TIERE");
+
+        char[][] letters = game.getWordleGrid();
+        char[][] status = game.getWordStatusGrid();
+
+
+        assertArrayEquals("TIERE".toCharArray(), letters[0]);
+
+
+        for (char s : status[0]) {
+            assertEquals('G', s);
+        }
+    }
+
+    @Test
+    void testCheckWord_SomeGreenSomeYellow() throws IOException {
+        Wordle game = new Wordle(new MockWordProvider());
+
+        game.checkWord("REISE");
+
+        char[][] status = game.getWordStatusGrid();
+
+        assertEquals('Y', status[0][0]);
+        assertEquals('Y', status[0][1]);
+        assertEquals('Y', status[0][2]);
+        assertEquals('X', status[0][3]);
+        assertEquals('G', status[0][4]);
+    }
+
+    @Test
+    void testCheckWord_AllWrong() throws IOException {
+        Wordle game = new Wordle(new MockWordProvider());
+
+        game.checkWord("MANGO");
+
+        char[][] status = game.getWordStatusGrid();
+
+
+        for (char s : status[0]) {
+            assertEquals('X', s);
+        }
+    }
+
+    @Test
+    void testCheckWord_InvalidInput() throws IOException {
+        Wordle game = new Wordle(new MockWordProvider());
+
+        game.checkWord("12345");
+
+        char[][] letters = game.getWordleGrid();
+        char[][] status = game.getWordStatusGrid();
+
+
+        for (char c : letters[0]) {
+            assertEquals('\0', c);
+        }
+        for (char c : status[0]) {
+            assertEquals('\0', c);
+        }
+    }
+
+    @Test
+    void testMultipleAttempts() throws IOException {
+        Wordle game = new Wordle(new MockWordProvider());
+
+        game.checkWord("MANGO");
+        game.checkWord("APFEL");
+
+        char[][] letters = game.getWordleGrid();
+        char[][] status = game.getWordStatusGrid();
+
+
+        assertArrayEquals("MANGO".toCharArray(), letters[0]);
+        assertArrayEquals("APFEL".toCharArray(), letters[1]);
+    }
 
     @Test
     void testEmptyString() throws IOException {
