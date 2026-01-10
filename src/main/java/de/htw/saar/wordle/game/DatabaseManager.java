@@ -1,46 +1,49 @@
-package de.htw.saar.wordle.game; // Dein Package
+package de.htw.saar.wordle.game;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class DatabaseManager {
 
-    // Pfad zur Datei im Projektordner
-    private static final String URL = "jdbc:sqlite:wordle.db";
+    private static String url = "jdbc:sqlite:wordle.db";
 
-    // Stellt die Verbindung her
+    // für Tests kann man DB switchen wie Nintendo
+    public static void setDbName(String dbName) {
+        url = "jdbc:sqlite:" + dbName;
+    }
+
     public static Connection connect() {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(URL);
-            // WICHTIG: Fremdschlüssel-Check aktivieren (SQLite Standard ist aus)
-            conn.createStatement().execute("PRAGMA foreign_keys = ON;");
+            conn = DriverManager.getConnection(url);
+            if (conn != null) {
+                Statement stmt = conn.createStatement();
+                stmt.execute("PRAGMA foreign_keys = ON;");
+            }
         } catch (SQLException e) {
             System.out.println("Verbindung fehlgeschlagen: " + e.getMessage());
         }
         return conn;
     }
 
-    // Beispiel: Einen neuen User anlegen
     public static boolean registerUser(String username, String password) {
-        // SQL Injection verhindern: Wir nutzen Fragezeichen (?) statt Strings zusammenkleben!
         String sql = "INSERT INTO users(username, password_hash) VALUES(?, ?)";
 
         try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement prepStmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, username);
-            // TODO: Hier später echtes Hashing einbauen (z.B. BCrypt), nicht Klartext!
-            pstmt.setString(2, password);
+            if (conn == null) return false;
 
-            pstmt.executeUpdate();
-            System.out.println("User " + username + " erfolgreich angelegt.");
+            prepStmt.setString(1, username);
+            prepStmt.setString(2, password);
+            prepStmt.executeUpdate();
             return true;
 
         } catch (SQLException e) {
-            System.out.println("Fehler beim Registrieren: " + e.getMessage());
+            System.out.println("Fehler beim User-Anlegen: " + e.getMessage());
             return false;
         }
     }
