@@ -56,4 +56,21 @@ public class UserRepository {
         }
         return Optional.empty();
     }
+
+    public boolean deleteByUsername(String username) {
+        String sql = "DELETE FROM users WHERE username = ?";
+
+        try (Connection con = DatabaseManager.connect();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+            int affectedRows = ps.executeUpdate();
+
+            return affectedRows > 0;
+
+        } catch(SQLException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+    }
 }

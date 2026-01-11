@@ -15,10 +15,14 @@ public class AuthenticationService {
 
     public boolean login(String username, String password) {
         return repo.findByUsername(username)
-            .map(user ->
-                PasswordHashing.verify(
-                    password,
-                    user.getPasswordHash()))
+            .map(user -> PasswordHashing.verify(password, user.passwordHash()))
             .orElse(false);
+    }
+
+    public boolean deleteAccount(String username, String password) {
+        return repo.findByUsername(username)
+                .filter(user -> PasswordHashing.verify(password, user.passwordHash()))
+                .map(user -> repo.deleteByUsername(user.username()))
+                .orElse(false);
     }
 }

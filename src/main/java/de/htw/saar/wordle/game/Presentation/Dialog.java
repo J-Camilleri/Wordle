@@ -11,10 +11,11 @@ public class Dialog extends UserInterface {
     private Scanner input;
     private static final int LOGIN = 1;
     private static final int REGISTER = 2;
+    private static final int DELETE_ACCOUNT = 3;
 
     private static final int NEW_GAME = 1;
     private static final int LOAD_GAME = 2;
-    private static final int END_GAME = 3;
+    private static final int END_GAME = 4;
 
     private static final int EASY = 1;
     private static final int MEDIUM = 2;
@@ -76,6 +77,9 @@ public class Dialog extends UserInterface {
             case REGISTER:
                 handleRegister();
                 break;
+            case DELETE_ACCOUNT:
+                handleDeleteAccount();
+                break;
             case END_GAME:
                 System.out.println("Du hast das Spiel geschlossen.");
                 break;
@@ -89,7 +93,8 @@ public class Dialog extends UserInterface {
         System.out.println("Willkommen zu Wordle");
         System.out.println("1. Einloggen");
         System.out.println("2. Registrieren");
-        System.out.println("3. Beenden");
+        System.out.println("3. Konto löschen");
+        System.out.println("4. Beenden");
         System.out.println("Bitte wähle eine Option aus:");
     }
 
@@ -115,7 +120,6 @@ public class Dialog extends UserInterface {
         String password = input.nextLine();
 
         boolean success = auth.login(username, password);
-
         System.out.println(success ? "Login Erfolgreich!" : "Benutzername oder Passwort falsch.");
     }
 
@@ -128,6 +132,17 @@ public class Dialog extends UserInterface {
 
         auth.register(username, password);
         System.out.println("Registrierung erfolgreich!");
+    }
+
+    private void handleDeleteAccount() {
+        System.out.println("Benutzername: ");
+        String username = input.nextLine();
+
+        System.out.println("Passwort: ");
+        String password = input.nextLine();
+
+        boolean isDeleted = auth.deleteAccount(username, password);
+        System.out.println(isDeleted ? "Konto erfolgreich gelöscht!" : "Benutzername oder Passwort falsch, Konto konnte nicht gelöscht werden.");
     }
 
     public void gameWon(String message) {

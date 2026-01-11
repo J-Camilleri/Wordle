@@ -1,8 +1,6 @@
 package de.htw.saar.wordle.game;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.sql.Connection;
@@ -11,17 +9,15 @@ import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DatabaseManagerTest {
+class AuthenticationServiceTest {
 
-    // seperate test db müssen ma noch anlegen
+    private AuthenticationService auth;
     private static final String TEST_DB = "wordle_test.db";
 
     @BeforeEach
     void setUp() {
 
         DatabaseManager.setDbName(TEST_DB);
-
-
         File dbFile = new File(TEST_DB);
         if (dbFile.exists()) {
             dbFile.delete();
@@ -42,34 +38,58 @@ class DatabaseManagerTest {
         } catch (SQLException e) {
             fail("Setup fehlgeschlagen: " + e.getMessage());
         }
+
+        UserRepository repo = new UserRepository();
+        auth = new AuthenticationService(repo);
     }
 
     @Test
-    void testConnection() {
-        Connection conn = DatabaseManager.connect();
-        assertNotNull(conn, "Die Verbindung sollte nicht null sein");
-        try {
-            assertFalse(conn.isClosed(), "Die Verbindung sollte offen sein");
-            conn.close();
-        } catch (SQLException e) {
-            fail("SQL Fehler beim Prüfen der Verbindung");
-        }
+    void testCreateUser() {
+        auth.register("carol", "secret");
+        assertTrue(auth.login("carol", "secret"));
     }
 
     @Test
-    void testRegisterUserSuccess() {
-        boolean result = DatabaseManager.registerUser("JUnitPlayer", "geheim123");
-
-        assertTrue(result, "User sollte erfolgreich angelegt werden");
+    void testLoginUser() {
+        auth.register("dave", "password");
+        assertTrue(auth.login("dave", "password"));
     }
 
     @Test
-    void testRegisterUserDuplicateFail() {
-        DatabaseManager.registerUser("DoppelterPeter", "pw1");
+    void testLoginWrongPassword() {
+        auth.register("erin", "correct");
+        assertFalse(auth.login("erin", "wrong"));
+    }
 
-        boolean result = DatabaseManager.registerUser("DoppelterPeter", "pw2");
+    @Test
+    void testLoginUserNotInDb() {
+        assertFalse(auth.login("ghost", "whatever"));
+    }
 
-        assertFalse(result, "Der zweite User mit gleichem Namen sollte abgelehnt werden");
+    @Test
+    void testDeleteUser() {
+        auth.register("frank", "1234");
+
+        boolean deleted = auth.deleteAccount("frank", "1234");
+
+        assertTrue(deleted);
+        assertFalse(auth.login("frank", "1234"));
+    }
+
+    @Test
+    void testDeleteUserWrongPassword() {
+        auth.register("gina", "pw");
+
+        boolean deleted = auth.deleteAccount("gina", "wrong");
+
+        assertFalse(deleted);
+        assertTrue(auth.login("gina", "pw"));
+    }
+
+    @Test
+    void testDeleteUserNotInDb() {
+        boolean deleted = auth.deleteAccount("nobody", "pw");
+        assertFalse(deleted);
     }
 
     @AfterEach

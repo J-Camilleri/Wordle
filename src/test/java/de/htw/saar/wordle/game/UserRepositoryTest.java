@@ -1,27 +1,24 @@
 package de.htw.saar.wordle.game;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DatabaseManagerTest {
+class UserRepositoryTest {
 
-    // seperate test db müssen ma noch anlegen
+    private UserRepository repo;
     private static final String TEST_DB = "wordle_test.db";
 
     @BeforeEach
     void setUp() {
 
         DatabaseManager.setDbName(TEST_DB);
-
-
         File dbFile = new File(TEST_DB);
         if (dbFile.exists()) {
             dbFile.delete();
@@ -42,34 +39,51 @@ class DatabaseManagerTest {
         } catch (SQLException e) {
             fail("Setup fehlgeschlagen: " + e.getMessage());
         }
+
+        repo = new UserRepository();
     }
 
     @Test
-    void testConnection() {
-        Connection conn = DatabaseManager.connect();
-        assertNotNull(conn, "Die Verbindung sollte nicht null sein");
-        try {
-            assertFalse(conn.isClosed(), "Die Verbindung sollte offen sein");
-            conn.close();
-        } catch (SQLException e) {
-            fail("SQL Fehler beim Prüfen der Verbindung");
-        }
+    void testSaveUserAndFind() {
+        repo.save("alice", "hash123");
+
+        Optional<User> user = repo.findByUsername("alice");
+
+        assertTrue(user.isPresent());
+        assertEquals("alice", user.get().username());
     }
 
     @Test
-    void testRegisterUserSuccess() {
-        boolean result = DatabaseManager.registerUser("JUnitPlayer", "geheim123");
-
-        assertTrue(result, "User sollte erfolgreich angelegt werden");
+    void testFindUserNotInDb() {
+        Optional<User> user = repo.findByUsername("ghost");
+        assertTrue(user.isEmpty());
     }
 
     @Test
-    void testRegisterUserDuplicateFail() {
-        DatabaseManager.registerUser("DoppelterPeter", "pw1");
+    void testDeleteByUsername() {
+        repo.save("bob", "hash");
 
-        boolean result = DatabaseManager.registerUser("DoppelterPeter", "pw2");
+        boolean deleted = repo.deleteByUsername("bob");
 
-        assertFalse(result, "Der zweite User mit gleichem Namen sollte abgelehnt werden");
+        assertTrue(deleted);
+        assertTrue(repo.findByUsername("bob").isEmpty());
+    }
+
+    @Test
+    void testDeleteByUsernameNotInDb() {
+        boolean deleted = repo.deleteByUsername("nobody");
+        assertFalse(deleted);
+    }
+
+    @Test
+    void testRegisterUserSameName() {
+        repo.save("carol", "hash1");
+        repo.save("carol", "hash2"); // sollte fehlschlagen
+
+        Optional<User> user = repo.findByUsername("carol");
+
+        assertTrue(user.isPresent());
+        assertEquals("carol", user.get().username());
     }
 
     @AfterEach
