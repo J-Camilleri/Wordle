@@ -41,8 +41,7 @@ public class Wordle {
         return tool;
     }
 
-
-    public void checkWord(String userInput) throws IOException {
+    public void checkWord(String userInput) {
         userInput = userInput.toUpperCase();
         int length = wordleWord.length();
         boolean[] used = new boolean[length];
@@ -84,6 +83,12 @@ public class Wordle {
         }
     }
 
+    //TODO diese Methode ist da um immer wieder die checkWord Methode zu wiederholen
+    //TODO bis das spiel gewonnen oder Verloren ist
+    private void gameLoop() {
+
+    }
+
     //TODO Keine Ahnung ob diese Methode in Wordle kommt oder in Dialog (tendiere aber zu Wordle)
     public void printBoard() {
         for (int r = 0; r < attempt; r++) { // zeigt jetzt nur die aktuellen Versuche an
@@ -105,25 +110,28 @@ public class Wordle {
     }
 
 
-    public static boolean wordExists(String userInput) throws IOException {
+    public static boolean wordExists(String userInput) {
         //TODO die System out prints in Dialog einbringen (Hier nur zum Debuggen genutzt)
+        try {
+            if (userInput.isEmpty() || userInput.contains(" ")) {
+                //System.out.println("Das Wort darf nicht leer sein oder leerzeichen enthalten.");
+                return false;
+            }
 
-        if (userInput.isEmpty() || userInput.contains(" ")) {
-           //System.out.println("Das Wort darf nicht leer sein oder leerzeichen enthalten.");
+            if (!userInput.matches("^[a-zA-Z]+$")) {
+                //System.out.println("Das Wort darf nur Buchstaben von a-z beinhalten.");
+                return false;
+            }
+
+            if (userInput.length() != 5) {
+                //System.out.println("Das Wort muss aus 5 Buchstaben bestehen");
+                return false;
+            }
+            return TOOL.check(userInput).isEmpty();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
             return false;
         }
-
-        if(!userInput.matches("^[a-zA-Z]+$")) {
-            //System.out.println("Das Wort darf nur Buchstaben von a-z beinhalten.");
-            return false;
-        }
-
-        if(userInput.length() != 5) {
-            //System.out.println("Das Wort muss aus 5 Buchstaben bestehen");
-            return false;
-        }
-
-        return TOOL.check(userInput).isEmpty();
     }
 
     public char[][] getWordleGrid() {

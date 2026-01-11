@@ -1,9 +1,6 @@
 package de.htw.saar.wordle.game;
 
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -16,9 +13,8 @@ class MockWordProvider implements WordProvider {
 
 class WordleTest {
 
-
     @Test
-    void testCheckWord_AllGreen() throws IOException {
+    void testCheckWord_AllGreen() {
         Wordle game = new Wordle(new MockWordProvider());
 
         game.checkWord("TIERE");
@@ -26,9 +22,7 @@ class WordleTest {
         char[][] letters = game.getWordleGrid();
         char[][] status = game.getWordStatusGrid();
 
-
         assertArrayEquals("TIERE".toCharArray(), letters[0]);
-
 
         for (char s : status[0]) {
             assertEquals('G', s);
@@ -36,7 +30,7 @@ class WordleTest {
     }
 
     @Test
-    void testCheckWord_SomeGreenSomeYellow() throws IOException {
+    void testCheckWord_SomeGreenSomeYellow() {
         Wordle game = new Wordle(new MockWordProvider());
 
         game.checkWord("REISE");
@@ -51,7 +45,7 @@ class WordleTest {
     }
 
     @Test
-    void testCheckWord_AllWrong() throws IOException {
+    void testCheckWord_AllWrong() {
         Wordle game = new Wordle(new MockWordProvider());
 
         game.checkWord("MANGO");
@@ -65,7 +59,7 @@ class WordleTest {
     }
 
     @Test
-    void testCheckWord_InvalidInput() throws IOException {
+    void testCheckWord_InvalidInput() {
         Wordle game = new Wordle(new MockWordProvider());
 
         game.checkWord("12345");
@@ -83,7 +77,7 @@ class WordleTest {
     }
 
     @Test
-    void testMultipleAttempts() throws IOException {
+    void testMultipleAttempts() {
         Wordle game = new Wordle(new MockWordProvider());
 
         game.checkWord("MANGO");
@@ -98,42 +92,42 @@ class WordleTest {
     }
 
     @Test
-    void testEmptyString() throws IOException {
+    void testEmptyString() {
         assertFalse(Wordle.wordExists(" "), "Leeres Wort sollte false zurückgeben");
     }
 
     @Test
-    void testWordWithSpace() throws IOException {
+    void testWordWithSpace() {
         assertFalse(Wordle.wordExists("Te st"), "Wort mit Leerzeichen sollte false zurückgeben");
     }
 
     @Test
-    void testWordWithNumbers() throws IOException {
+    void testWordWithNumbers() {
         assertFalse(Wordle.wordExists("Test1"), "Wort mit Zahlen sollte false zurückgeben");
     }
 
     @Test
-    void testWordWithSpecialChars() throws IOException {
+    void testWordWithSpecialChars() {
         assertFalse(Wordle.wordExists("Te$st"), "Wort mit Sonderzeichen sollte false zurückgeben");
     }
 
     @Test
-    void testWordWithUmlauts() throws IOException {
+    void testWordWithUmlauts() {
         assertFalse(Wordle.wordExists("Tästs"), "Wort mit Umlaut sollte false zurückgeben");
     }
 
     @Test
-    void testWordTooShort() throws IOException {
+    void testWordTooShort() {
         assertFalse(Wordle.wordExists("Test"), "Wort mit <5 Buchstaben sollte false zurückgeben");
     }
 
     @Test
-    void testWordTooLong() throws IOException {
+    void testWordTooLong() {
         assertFalse(Wordle.wordExists("Testing"), "Wort mit >5 Buchstaben sollte false zurückgeben");
     }
 
     @Test
-    void testValidWord() throws IOException {
+    void testValidWord() {
         assertTrue(Wordle.wordExists("Tests"), "Gültiges Wort sollte true zurückgeben");
     }
 }
