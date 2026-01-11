@@ -18,122 +18,124 @@ class WordleTest {
 
 
     @Test
-    void testCheckWord_AllGreen() throws IOException {
-        Wordle game = new Wordle(new MockWordProvider());
-
+    void testCheckWord_AllGreen() {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
         game.checkWord("TIERE");
-
-        char[][] letters = game.getWordleGrid();
-        char[][] status = game.getWordStatusGrid();
-
-
-        assertArrayEquals("TIERE".toCharArray(), letters[0]);
-
-
-        for (char s : status[0]) {
-            assertEquals('G', s);
+        Grid[][] board = game.getBoard();
+        for (int i = 0; i < board[0].length; i++) {
+            assertEquals("TIERE".charAt(i), board[0][i].letter());
+            assertEquals(LetterStatus.CORRECT, board[0][i].status());
         }
     }
 
     @Test
-    void testCheckWord_SomeGreenSomeYellow() throws IOException {
-        Wordle game = new Wordle(new MockWordProvider());
-
+    void testCheckWord_SomeGreenSomeYellow()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
         game.checkWord("REISE");
-
-        char[][] status = game.getWordStatusGrid();
-
-        assertEquals('Y', status[0][0]);
-        assertEquals('Y', status[0][1]);
-        assertEquals('Y', status[0][2]);
-        assertEquals('X', status[0][3]);
-        assertEquals('G', status[0][4]);
+        Grid[][] board = game.getBoard();
+        assertEquals(LetterStatus.PRESENT, board[0][0].status());
+        assertEquals(LetterStatus.PRESENT, board[0][1].status());
+        assertEquals(LetterStatus.PRESENT, board[0][2].status());
+        assertEquals(LetterStatus.ABSENT, board[0][3].status());
+        assertEquals(LetterStatus.CORRECT, board[0][4].status());
     }
 
     @Test
-    void testCheckWord_AllWrong() throws IOException {
-        Wordle game = new Wordle(new MockWordProvider());
-
+    void testCheckWord_AllWrong() {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
         game.checkWord("MANGO");
-
-        char[][] status = game.getWordStatusGrid();
-
-
-        for (char s : status[0]) {
-            assertEquals('X', s);
+        Grid[][] board = game.getBoard();
+        for (Grid cell : board[0]) {
+            assertEquals(LetterStatus.ABSENT, cell.status());
         }
     }
 
     @Test
-    void testCheckWord_InvalidInput() throws IOException {
-        Wordle game = new Wordle(new MockWordProvider());
-
+    void testCheckWord_InvalidInput()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
         game.checkWord("12345");
-
-        char[][] letters = game.getWordleGrid();
-        char[][] status = game.getWordStatusGrid();
-
-
-        for (char c : letters[0]) {
-            assertEquals('\0', c);
-        }
-        for (char c : status[0]) {
-            assertEquals('\0', c);
+        Grid[][] board = game.getBoard();
+        for (Grid cell : board[0]) {
+            assertNull(cell);
         }
     }
 
     @Test
-    void testMultipleAttempts() throws IOException {
-        Wordle game = new Wordle(new MockWordProvider());
-
+    void testMultipleAttempts()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
         game.checkWord("MANGO");
         game.checkWord("APFEL");
-
-        char[][] letters = game.getWordleGrid();
-        char[][] status = game.getWordStatusGrid();
-
-
-        assertArrayEquals("MANGO".toCharArray(), letters[0]);
-        assertArrayEquals("APFEL".toCharArray(), letters[1]);
+        Grid[][] board = game.getBoard();
+        assertEquals('M', board[0][0].letter());
+        assertEquals('A', board[1][0].letter());
     }
 
     @Test
-    void testEmptyString() throws IOException {
-        assertFalse(Wordle.wordExists(" "), "Leeres Wort sollte false zurückgeben");
+    void testHasAttemptsLeft()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.HARD));
+        for (int i = 0; i < 5; i++) {
+            assertTrue(game.hasAttemptsLeft());
+            game.checkWord("MANGO");
+        }
+        assertFalse(game.hasAttemptsLeft());
     }
 
     @Test
-    void testWordWithSpace() throws IOException {
-        assertFalse(Wordle.wordExists("Te st"), "Wort mit Leerzeichen sollte false zurückgeben");
+    void testHasNoAttemptsLeft()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.HARD));
+        for (int i = 0; i < game.getConfig().getMaxAttempts(); i++) {
+            assertTrue(game.hasAttemptsLeft());
+            game.checkWord("MANGO");
+        }
+        assertFalse(game.hasAttemptsLeft());
+    }
+
+
+    @Test
+    void testEmptyString()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertFalse(game.wordExists(" "), "Leeres Wort sollte false zurückgeben");
     }
 
     @Test
-    void testWordWithNumbers() throws IOException {
-        assertFalse(Wordle.wordExists("Test1"), "Wort mit Zahlen sollte false zurückgeben");
+    void testWordWithSpace()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertFalse(game.wordExists("Te st"), "Wort mit Leerzeichen sollte false zurückgeben");
     }
 
     @Test
-    void testWordWithSpecialChars() throws IOException {
-        assertFalse(Wordle.wordExists("Te$st"), "Wort mit Sonderzeichen sollte false zurückgeben");
+    void testWordWithNumbers()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertFalse(game.wordExists("Test1"), "Wort mit Zahlen sollte false zurückgeben");
     }
 
     @Test
-    void testWordWithUmlauts() throws IOException {
-        assertFalse(Wordle.wordExists("Tästs"), "Wort mit Umlaut sollte false zurückgeben");
+    void testWordWithSpecialChars() {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertFalse(game.wordExists("Te$st"), "Wort mit Sonderzeichen sollte false zurückgeben");
     }
 
     @Test
-    void testWordTooShort() throws IOException {
-        assertFalse(Wordle.wordExists("Test"), "Wort mit <5 Buchstaben sollte false zurückgeben");
+    void testWordWithUmlauts()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertFalse(game.wordExists("Tästs"), "Wort mit Umlaut sollte false zurückgeben");
     }
 
     @Test
-    void testWordTooLong() throws IOException {
-        assertFalse(Wordle.wordExists("Testing"), "Wort mit >5 Buchstaben sollte false zurückgeben");
+    void testWordTooShort()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertFalse(game.wordExists("Test"), "Wort mit <5 Buchstaben sollte false zurückgeben");
     }
 
     @Test
-    void testValidWord() throws IOException {
-        assertTrue(Wordle.wordExists("Tests"), "Gültiges Wort sollte true zurückgeben");
+    void testWordTooLong()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertFalse(game.wordExists("Testing"), "Wort mit >5 Buchstaben sollte false zurückgeben");
+    }
+
+    @Test
+    void testValidWord()  {
+        Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        assertTrue(game.wordExists("Tests"), "Gültiges Wort sollte true zurückgeben");
     }
 }
