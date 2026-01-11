@@ -52,7 +52,7 @@ public class Dialog extends UserInterface {
 
         while(result < 0) {
             try {
-                line = input.next();
+                line = input.nextLine();
                 result = Integer.parseInt(line);
                 if(result < 0)
                     System.out.println("You entered a negative integer. Please try again.");
@@ -120,14 +120,13 @@ public class Dialog extends UserInterface {
     }
 
     private void handleRegister() {
-        String username = input.nextLine();
         System.out.println("Benutzername:");
+        String username = input.nextLine();
 
         System.out.println("Passwort:");
         String password = input.nextLine();
 
         auth.register(username, password);
-
         System.out.println("Registrierung erfolgreich!");
     }
 
