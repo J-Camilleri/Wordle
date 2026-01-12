@@ -20,7 +20,7 @@ public class UserRepository {
         }
     }*/
 
-    public void save(String username, String passwordHash) {
+    public boolean save(String username, String passwordHash) {
         String sql = "INSERT INTO users(username, password_hash) VALUES (?, ?)";
 
         try (Connection con = DatabaseManager.connect();
@@ -29,8 +29,10 @@ public class UserRepository {
             ps.setString(1, username);
             ps.setString(2, passwordHash);
             ps.executeUpdate();
+            return true;
         } catch(SQLException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Username ungültig:" + e.getMessage());
+            return false;
         }
     }
 

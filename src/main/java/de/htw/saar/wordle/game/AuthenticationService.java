@@ -8,9 +8,9 @@ public class AuthenticationService {
         this.repo = repo;
     }
 
-    public void register(String username, String password) {
+    public boolean register(String username, String password) {
         String hash = PasswordHashing.hash(password);
-        repo.save(username, hash);
+        return repo.save(username, hash);
     }
 
     public boolean login(String username, String password) {

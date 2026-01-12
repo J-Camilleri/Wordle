@@ -130,8 +130,12 @@ public class Dialog extends UserInterface {
         System.out.println("Passwort:");
         String password = input.nextLine();
 
-        auth.register(username, password);
-        System.out.println("Registrierung erfolgreich!");
+        boolean usernameOk = auth.register(username, password);
+        if(usernameOk) {
+            System.out.println("Registrierung erfolgreich!");
+        } else {
+            System.out.println("Registrierung fehlgeschlagen: Username existiert bereits oder DB-Fehler.");
+        }
     }
 
     private void handleDeleteAccount() {
