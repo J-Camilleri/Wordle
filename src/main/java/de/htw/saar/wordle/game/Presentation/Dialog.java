@@ -1,8 +1,7 @@
 package de.htw.saar.wordle.game.Presentation;
 
-import de.htw.saar.wordle.game.AuthenticationService;
-import de.htw.saar.wordle.game.UserRepository;
-import de.htw.saar.wordle.game.Wordle;
+import de.htw.saar.wordle.game.*;
+
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -13,6 +12,9 @@ public class Dialog extends UserInterface {
     private static final int REGISTER = 2;
     private static final int DELETE_ACCOUNT = 3;
 
+    private static final int DAILY_WORDLE = 1;
+    private static final int PRACTICE_MODE = 2;
+
     private static final int NEW_GAME = 1;
     private static final int LOAD_GAME = 2;
     private static final int END_GAME = 4;
@@ -21,6 +23,8 @@ public class Dialog extends UserInterface {
     private static final int MEDIUM = 2;
     private static final int HARD = 3;
 
+    private State state = State.LOGIN_MENU;
+    private boolean running = true;
     private Wordle currentGame;
 
     UserRepository userRepository = new UserRepository();
@@ -32,19 +36,17 @@ public class Dialog extends UserInterface {
     }
 
     public void start() {
-        int function = 0;
-
-        do {
-            try {
-                showLoginMenu();
-                function = readPositiveIntegerInput();
-                executeFunction(function);
-            } catch(IllegalArgumentException e) {
-                System.out.println(e.getMessage());
-                e.printStackTrace(System.out);
+        while(running) {
+            switch (state) {
+                case LOGIN_MENU -> showLoginMenu();
+                case LOGIN -> handleLogin();
+                case REGISTER -> handleRegister();
+                case DELETE_ACCOUNT -> handleDeleteAccount();
+                case MAIN_MENU -> showMainMenu();
+                case DIFFICULTY -> showDifficultyMenu();
+                case EXIT -> running = false;
             }
         }
-        while(function != END_GAME);
     }
 
     private int readPositiveIntegerInput() {
@@ -69,26 +71,6 @@ public class Dialog extends UserInterface {
         return result;
     }
 
-    private void executeFunction(int function) {
-        switch(function) {
-            case LOGIN:
-                handleLogin();
-                break;
-            case REGISTER:
-                handleRegister();
-                break;
-            case DELETE_ACCOUNT:
-                handleDeleteAccount();
-                break;
-            case END_GAME:
-                System.out.println("Du hast das Spiel geschlossen.");
-                break;
-            default:
-                System.out.println("Ungültige Option.");
-                break;
-        }
-    }
-
     private void showLoginMenu() {
         System.out.println("Willkommen zu Wordle");
         System.out.println("1. Einloggen");
@@ -96,6 +78,15 @@ public class Dialog extends UserInterface {
         System.out.println("3. Konto löschen");
         System.out.println("4. Beenden");
         System.out.println("Bitte wähle eine Option aus:");
+
+        int choice = readPositiveIntegerInput();
+
+        switch (choice) {
+            case LOGIN -> state = State.LOGIN;
+            case REGISTER -> state = State.REGISTER;
+            case DELETE_ACCOUNT -> state = State.DELETE_ACCOUNT;
+            case END_GAME -> state = State.EXIT;
+        }
     }
 
     private void showMainMenu() {
@@ -103,13 +94,32 @@ public class Dialog extends UserInterface {
         System.out.println("1. Daily Wordle");
         System.out.println("2. Übungsmodus");
         System.out.println("3. Beenden");
+
+        int choice = readPositiveIntegerInput();
+
+        switch (choice) {
+            case DAILY_WORDLE -> state = State.DAILY_WORDLE;
+            case PRACTICE_MODE -> state = State.DIFFICULTY;
+            case END_GAME -> state = State.EXIT;
+        }
     }
 
+    //TODO Difficulty muss noch  geändert werden auf passende methoden.
     private void showDifficultyMenu() {
         System.out.println("Bitte wähle eine Schwierigkeit aus");
         System.out.println("1. Leicht");
         System.out.println("2. Mittel");
         System.out.println("3. Schwer");
+        System.out.println("4. Beenden");
+
+        int choice = readPositiveIntegerInput();
+
+        switch (choice) {
+            case EASY -> state = State.EXIT;
+            case MEDIUM -> state = State.EXIT;
+            case HARD -> state = State.EXIT;
+            case END_GAME -> state = State.EXIT;
+        }
     }
 
     private void handleLogin() {
@@ -120,7 +130,12 @@ public class Dialog extends UserInterface {
         String password = input.nextLine();
 
         boolean success = auth.login(username, password);
-        System.out.println(success ? "Login Erfolgreich!" : "Benutzername oder Passwort falsch.");
+        if(success) {
+            System.out.println("Login Erfolgreich");
+            state = State.MAIN_MENU;
+        } else {
+            System.out.println("Benutzername oder Passwort falsch");
+        }
     }
 
     private void handleRegister() {
@@ -130,9 +145,11 @@ public class Dialog extends UserInterface {
         System.out.println("Passwort:");
         String password = input.nextLine();
 
-        boolean usernameOk = auth.register(username, password);
-        if(usernameOk) {
+        boolean success = auth.register(username, password);
+        if(success) {
             System.out.println("Registrierung erfolgreich!");
+            System.out.println("Bitte Melde dich erneut an um fortzufahren");
+            state = State.LOGIN;
         } else {
             System.out.println("Registrierung fehlgeschlagen: Username existiert bereits oder DB-Fehler.");
         }
