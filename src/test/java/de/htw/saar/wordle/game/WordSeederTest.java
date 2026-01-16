@@ -53,7 +53,7 @@ class WordSeederTest {
     void testCheckIfEmpty() {
         try{
             WordSeeder test = new WordSeeder();
-            test.checkIfEmpty();
+            test.fillIfEmpty();
 
             int wordCount = countRows("words");
             int practiceCount = countRows("practice_words");

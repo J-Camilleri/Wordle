@@ -15,29 +15,30 @@ class AuthenticationServiceTest {
     private static final String TEST_DB = "wordle_test.db";
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
 
         DatabaseManager.setDbName(TEST_DB);
         File dbFile = new File(TEST_DB);
         if (dbFile.exists()) {
             dbFile.delete();
         }
+        DatabaseManager.dbInit();
 
-        // tabellen werden nicht automatisch von sqllite erstellt. daher:
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-            String sql = "CREATE TABLE IF NOT EXISTS users (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "username TEXT NOT NULL UNIQUE," +
-                    "password_hash TEXT NOT NULL," +
-                    "created_at TEXT DEFAULT CURRENT_TIMESTAMP" +
-                    ");";
-            stmt.execute(sql);
-
-        } catch (SQLException e) {
-            fail("Setup fehlgeschlagen: " + e.getMessage());
-        }
+//        // tabellen werden nicht automatisch von sqllite erstellt. daher:
+//        try (Connection conn = DatabaseManager.connect();
+//             Statement stmt = conn.createStatement()) {
+//
+//            String sql = "CREATE TABLE IF NOT EXISTS users (" +
+//                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+//                    "username TEXT NOT NULL UNIQUE," +
+//                    "password_hash TEXT NOT NULL," +
+//                    "created_at TEXT DEFAULT CURRENT_TIMESTAMP" +
+//                    ");";
+//            stmt.execute(sql);
+//
+//        } catch (SQLException e) {
+//            fail("Setup fehlgeschlagen: " + e.getMessage());
+//        }
 
         UserRepository repo = new UserRepository();
         auth = new AuthenticationService(repo);
@@ -96,8 +97,9 @@ class AuthenticationServiceTest {
     void tearDown() {
         try (Connection conn = DatabaseManager.connect();
              Statement stmt = conn.createStatement()) {
-
+            stmt.execute("DELETE FROM scoreboard");
             stmt.execute("DELETE FROM users");
+
 
         } catch (SQLException e) {
             fail("Cleanup fehlgeschlagen: " + e.getMessage());

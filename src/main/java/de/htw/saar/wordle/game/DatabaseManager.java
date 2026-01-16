@@ -29,6 +29,15 @@ public class DatabaseManager {
         return conn;
     }
 
+    public static void dbInit() throws SQLException {
+        try {
+            ScoreboardRepository.createScoreboard();
+            UserRepository.createTable();
+        } catch (Exception e) {
+            System.out.println("Fehler beim initialisieren der DB" + e.getMessage());
+        }
+    }
+
     public static boolean registerUser(String username, String password) {
         String sql = "INSERT INTO users(username, password_hash) VALUES(?, ?)";
 
