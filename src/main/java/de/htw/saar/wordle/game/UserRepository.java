@@ -5,7 +5,7 @@ import java.util.Optional;
 
 public class UserRepository {
 
-    public void createTable() throws SQLException {
+    public static void createTable() throws SQLException {
         String sql = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +23,7 @@ public class UserRepository {
     public boolean save(String username, String passwordHash) {
 
         String insertUser = "INSERT INTO users(username, password_hash) VALUES (?, ?)";
-        String insertScore = "INSERT INTO scores(user_id, score) VALUES (?, 0)";
+        String insertScore = "INSERT INTO scoreboard(user_id, score) VALUES (?, 0)";
 
         try (Connection connection = DatabaseManager.connect()) {
             connection.setAutoCommit(false); //Damit in Scoreboard direkt mit angelegt wird und zb kein User ohne Score angelegt wird (Transaktion startet)
@@ -68,17 +68,6 @@ public class UserRepository {
             return false;
         }
     }
-
-
-
-
-
-
-
-
-
-
-
 
     public Optional<User> findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";

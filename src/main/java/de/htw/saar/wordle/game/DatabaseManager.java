@@ -32,9 +32,9 @@ public class DatabaseManager {
     public static void dbInit() throws SQLException {
         try {
             ScoreboardRepository.createScoreboard();
-            UserRepository.createTable()
+            UserRepository.createTable();
         } catch (Exception e) {
-            System.out.println("Fehler beim initialisieren der DB" + e.getMessage())
+            System.out.println("Fehler beim initialisieren der DB" + e.getMessage());
         }
     }
 
