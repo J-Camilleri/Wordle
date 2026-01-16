@@ -21,20 +21,64 @@ public class UserRepository {
     }*/
 
     public boolean save(String username, String passwordHash) {
-        String sql = "INSERT INTO users(username, password_hash) VALUES (?, ?)";
 
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        String insertUser = "INSERT INTO users(username, password_hash) VALUES (?, ?)";
+        String insertScore = "INSERT INTO scores(user_id, score) VALUES (?, 0)";
 
-            ps.setString(1, username);
-            ps.setString(2, passwordHash);
-            ps.executeUpdate();
-            return true;
-        } catch(SQLException e) {
-            System.out.println("Username ungültig:" + e.getMessage());
+        try (Connection connection = DatabaseManager.connect()) {
+            connection.setAutoCommit(false); //Damit in Scoreboard direkt mit angelegt wird und zb kein User ohne Score angelegt wird (Transaktion startet)
+            //wenn  AutoCommit = false muss irgendwo commit oder rollback vorkommen sonst weiß DB nicht ob Speichern oder löschen
+
+            try {
+                int userId;
+
+                //User anlegen
+                try (PreparedStatement psUser = connection.prepareStatement(insertUser, Statement.RETURN_GENERATED_KEYS)) {
+                    psUser.setString(1, username);
+                    psUser.setString(2, passwordHash);
+                    psUser.executeUpdate();
+
+                    try (ResultSet rs = psUser.getGeneratedKeys()) {  //ID holen für Scoreboard
+                        if (!rs.next()) {
+                            throw new SQLException("Keine User_ID erzeugt");
+                        }
+                        userId = rs.getInt(1);
+                    }
+
+                }
+                //Scoreboardeintrag anlegen
+                try (PreparedStatement psScore = connection.prepareStatement(insertScore)) {
+                    psScore.setInt(1, userId);
+                    psScore.executeUpdate();
+                }
+                connection.commit();
+                return true;
+            } catch (SQLException e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    System.out.println("Rollback fehler" + ex.getMessage());
+                }
+                System.out.println("Fehler beim User-Anlegen: " + e.getMessage());
+                return false;
+            }
+        } catch (SQLException e) {
+            //Fehler beim connect oder close der connection
+            System.out.println("DB Fehler: " + e.getMessage());
             return false;
         }
     }
+
+
+
+
+
+
+
+
+
+
+
 
     public Optional<User> findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
