@@ -5,7 +5,7 @@ import java.util.Optional;
 
 public class UserRepository {
 
-    /*public void createTable() throws SQLException {
+    public void createTable() throws SQLException {
         String sql = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,7 +18,7 @@ public class UserRepository {
              Statement st = con.createStatement()) {
             st.execute(sql);
         }
-    }*/
+    }
 
     public boolean save(String username, String passwordHash) {
 
