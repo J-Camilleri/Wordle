@@ -6,9 +6,12 @@ import org.languagetool.rules.Rule;
 import org.languagetool.rules.spelling.SpellingCheckRule;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 
 public class Wordle {
 
+    private int gameId;
     private final GameConfig config;
     private final String wordleWord;
     private final Grid[][] board;
@@ -23,12 +26,43 @@ public class Wordle {
     private WordProvider provider;
 
 
+    // Konstruktor um neues Game zu erstellen
     public Wordle(WordProvider provider, GameConfig config) {
+        this.gameId = -1; // Damit der Compiler die Schniss hält, weil noch keine DB-id vorhanden
         this.config = config;
         this.provider = provider;
         this.wordleWord = provider.getRandomWord();
         this.board = new Grid[config.getMaxAttempts()][config.getWordlength()];
         this.TOOL = createTool(config.getLanguage());
+    }
+
+    // Konstruktor um Game aus der DB zu laden
+    public Wordle(GameConfig config, int gameId, String targetWord, List<String> guesses) {
+        this.gameId = gameId;
+        this.config = config;
+        this.provider = null;
+        this.wordleWord = targetWord;
+        this.board = new Grid[config.getMaxAttempts()][config.getWordlength()];
+        this.TOOL = createTool(config.getLanguage());
+        this.attempt = 0;
+
+        for (String guess : guesses) {
+            checkWord(guess);
+        }
+    }
+
+    public List<String> getGuessedWords() {
+        List<String> guesses = new ArrayList<>();
+        for (int i = 0; i < attempt; i++) {
+            StringBuilder sb = new StringBuilder();
+            for (int j = 0; j < config.getWordlength(); j++) {
+                if (board[i][j] != null) {
+                    sb.append(board[i][j].letter());
+                }
+            }
+            guesses.add(sb.toString());
+        }
+        return guesses;
     }
 
     private static JLanguageTool createTool(String language) {
@@ -149,6 +183,10 @@ public class Wordle {
 
     public int getAttempt() {
         return attempt;
+    }
+
+    public int getGameId() {
+        return gameId;
     }
 
 }
