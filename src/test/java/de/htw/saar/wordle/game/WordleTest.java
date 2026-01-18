@@ -138,4 +138,64 @@ class WordleTest {
         Wordle game = new Wordle(new MockWordProvider(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
         assertTrue(game.wordExists("Tests"), "Gültiges Wort sollte true zurückgeben");
     }
+
+    @Test
+    void testGameWon_FirstTry() {
+        Wordle game = new Wordle(new MockWordProvider(),
+                GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+
+        game.checkWord("TIERE");
+
+        assertTrue(game.gameWon());
+    }
+
+    @Test
+    void testGameWon_FalseWhenWrongWord() {
+        Wordle game = new Wordle(new MockWordProvider(),
+                GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+
+        game.checkWord("MANGO");
+
+        assertFalse(game.gameWon());
+    }
+
+    @Test
+    void testGameWon_NoAttempts() {
+        Wordle game = new Wordle(new MockWordProvider(),
+                GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+
+        assertFalse(game.gameWon());
+    }
+
+    @Test
+    void testGameLost_AllAttemptsUsed() {
+        Wordle game = new Wordle(new MockWordProvider(),
+                GameConfig.createThroughDifficulty(Difficulty.HARD));
+
+        for (int i = 0; i < game.getConfig().getMaxAttempts(); i++) {
+            game.checkWord("MANGO");
+        }
+
+        assertTrue(game.gameLost());
+    }
+
+    @Test
+    void testGameLost_FalseWhenWon() {
+        Wordle game = new Wordle(new MockWordProvider(),
+                GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+
+        game.checkWord("TIERE");
+
+        assertFalse(game.gameLost());
+    }
+
+    @Test
+    void testGameLost_AttemptsLeft() {
+        Wordle game = new Wordle(new MockWordProvider(),
+                GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+
+        game.checkWord("MANGO");
+
+        assertFalse(game.gameLost());
+    }
 }

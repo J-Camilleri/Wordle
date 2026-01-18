@@ -166,6 +166,28 @@ public class Wordle {
         }
     }
 
+    public boolean gameWon(){
+        if(attempt == 0){
+            return false;
+        }
+
+        int lastAttempt = attempt - 1;
+
+        for(int i = 0; i < config.getWordlength(); i++){
+            Grid grid = board[lastAttempt][i];
+            if(grid == null || grid.status() != LetterStatus.CORRECT){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public boolean gameLost(){
+        return !gameWon() && !hasAttemptsLeft();
+    }
+
+
     public boolean hasAttemptsLeft() {
         return attempt < config.getMaxAttempts();
     }
