@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets; //damit auf allen System kompatibel (W
 
 public class WordSeeder {
 
-    public void fillIfEmpty() throws Exception {
+    public static void fillIfEmpty() throws Exception {
         try (Connection c = DatabaseManager.connect()) {
 
             if (isEmpty(c, "words")) {
