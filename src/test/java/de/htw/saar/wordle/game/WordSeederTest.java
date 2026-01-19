@@ -43,6 +43,7 @@ class WordSeederTest {
         stmt.execute(sql1);
         stmt.execute(sql2);
 
+
     } catch (SQLException e) {
         fail("Setup fehlgeschlagen: " + e.getMessage());
     }
