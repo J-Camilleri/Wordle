@@ -1,6 +1,8 @@
 package de.htw.saar.wordle.game.Presentation;
 
 import de.htw.saar.wordle.game.*;
+import de.htw.saar.wordle.game.Database.UserRepository;
+import de.htw.saar.wordle.game.LoginSystem.AuthenticationService;
 
 import java.util.NoSuchElementException;
 import java.util.Scanner;

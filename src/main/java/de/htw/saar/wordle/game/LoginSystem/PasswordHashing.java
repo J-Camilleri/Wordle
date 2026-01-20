@@ -1,4 +1,4 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.LoginSystem;
 
 import org.mindrot.jbcrypt.BCrypt;
 

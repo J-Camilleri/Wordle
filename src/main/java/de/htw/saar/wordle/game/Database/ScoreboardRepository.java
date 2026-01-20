@@ -1,7 +1,9 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Database;
+
+import de.htw.saar.wordle.game.DatabaseManager;
+import de.htw.saar.wordle.game.ScoreEntry;
 
 import java.util.*;
-import java.sql.DriverManager;
 import java.sql.*;
 
 public class ScoreboardRepository {

@@ -23,6 +23,10 @@ public class DailyWordle implements WordProvider {
     }
 
 
+//    private static String today() {
+//        return LocalDate.now().toString();
+//    }
+
     public static Word checkExistingWords(String date) throws SQLException {
         String existingDailyWord = """
                 SELECT w.id,w.word_text
@@ -46,16 +50,14 @@ public class DailyWordle implements WordProvider {
         }
     }
 
-
-
-
     private Word getRandomWordFromDB() throws SQLException {
         String sql = """
                 SELECT id, word_text
                 FROM words
                 WHERE is_active = 1
-                ORDER BY RANDOM()
+                ORDER BY id
                 LIMIT 1
+                OFFSET ((strftime('%s','now') / 86400) % (SELECT COUNT(*) FROM Words))
                 """;
 
         try (Connection con = DatabaseManager.connect();
@@ -70,8 +72,6 @@ public class DailyWordle implements WordProvider {
             throw new IllegalStateException("Keine aktiven Wörter vorhanden.");
         }
     }
-
-
 
     public  Word chooseRandomDailyWord() throws SQLException {
         DailyWordle random = new DailyWordle();
