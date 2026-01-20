@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DailyWordleTest {
+class DailyWordleRepositoryTest {
 
     public static final String TEST_DB = "wordle_test.db";
 
@@ -53,7 +53,7 @@ class DailyWordleTest {
             stmt.execute(sql1);
             stmt.execute(sql2);
             stmt.execute(sql3);
-            DailyWordle.createDailyTable();
+            DailyWordleRepository.createDailyTable();
 
 
         } catch (SQLException e) {
@@ -67,14 +67,14 @@ class DailyWordleTest {
     @Test
     void checkExistingWords() throws SQLException {
         String today = LocalDate.now().toString();
-        Word w = DailyWordle.checkExistingWords(today);
+        Word w = DailyWordleRepository.checkExistingWords(today);
 
         assertNull(w,"Es sollte noch kein DailyWord für heute existieren");
     }
 
     @Test
     void chooseRandomDailyWord() throws SQLException {
-        DailyWordle dw = new DailyWordle();
+        DailyWordleRepository dw = new DailyWordleRepository();
         Word first = dw.chooseRandomDailyWord();
         Word second = dw.chooseRandomDailyWord(); //muss gleich sein
 
@@ -84,7 +84,7 @@ class DailyWordleTest {
 
     @Test
     void getRandomWord() throws SQLException {
-        DailyWordle dw = new DailyWordle();
+        DailyWordleRepository dw = new DailyWordleRepository();
         String word = dw.getRandomWord();
 
         assertEquals(word.toUpperCase(), word, "getRandomWord() sollte Uppercase zurückgeben");
