@@ -1,5 +1,7 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.ScoreboardRepository;
+import de.htw.saar.wordle.game.Database.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,6 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.LoginSystem;
+
+import de.htw.saar.wordle.game.Database.UserRepository;
 
 public class AuthenticationService {
 

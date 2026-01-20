@@ -43,9 +43,16 @@ class DailyWordleTest {
                     "is_active INTEGER DEFAULT 1" +
                     ");";
 
+            String sql3 = "CREATE TABLE IF NOT EXISTS daily_words (" +
+                    "word_date TEXT PRIMARY KEY," +
+                    "word_id INTEGER NOT NULL," +
+                    "FOREIGN KEY (word_id) REFERENCES words(id)" +
+                    ");";
+
 
             stmt.execute(sql1);
             stmt.execute(sql2);
+            stmt.execute(sql3);
             DailyWordle.createDailyTable();
 
 
@@ -59,8 +66,8 @@ class DailyWordleTest {
 
     @Test
     void checkExistingWords() throws SQLException {
-        String date = LocalDate.now().toString();
-        Word w = DailyWordle.checkExistingWords(date);
+        String today = LocalDate.now().toString();
+        Word w = DailyWordle.checkExistingWords(today);
 
         assertNull(w,"Es sollte noch kein DailyWord für heute existieren");
     }

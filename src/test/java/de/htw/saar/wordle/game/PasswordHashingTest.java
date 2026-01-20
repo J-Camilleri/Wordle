@@ -1,5 +1,6 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.LoginSystem.PasswordHashing;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -1,5 +1,8 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.ScoreboardRepository;
+import de.htw.saar.wordle.game.Database.UserRepository;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;

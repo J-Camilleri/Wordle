@@ -102,18 +102,18 @@ class WordSeederTest {
     }
 
 
-//    @AfterEach
-//    void tearDown() {
-//        try (Connection conn = DatabaseManager.connect();
-//             Statement stmt = conn.createStatement()) {
-//
-//            stmt.execute("DELETE FROM words");
-//            stmt.execute("DELETE FROM practice_words");
-//
-//        } catch (SQLException e) {
-//            fail("Cleanup fehlgeschlagen: " + e.getMessage());
-//        }
-//    }
+    @AfterEach
+    void tearDown() {
+        try (Connection conn = DatabaseManager.connect();
+             Statement stmt = conn.createStatement()) {
+
+            stmt.execute("DELETE FROM words");
+            stmt.execute("DELETE FROM practice_words");
+
+        } catch (SQLException e) {
+            fail("Cleanup fehlgeschlagen: " + e.getMessage());
+        }
+    }
 
     private int countRows(String table) throws SQLException {
         try (Connection conn = DatabaseManager.connect();

@@ -1,4 +1,9 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Database;
+
+import de.htw.saar.wordle.game.DatabaseManager;
+import de.htw.saar.wordle.game.Difficulty;
+import de.htw.saar.wordle.game.GameConfig;
+import de.htw.saar.wordle.game.Wordle;
 
 import java.sql.*;
 import java.util.ArrayList;
