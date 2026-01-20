@@ -45,6 +45,7 @@ public class Dialog extends UserInterface {
                 case REGISTER -> handleRegister();
                 case DELETE_ACCOUNT -> handleDeleteAccount();
                 case MAIN_MENU -> showMainMenu();
+                case DAILY_WORDLE -> handleDailyWordle();
                 case DIFFICULTY -> showDifficultyMenu();
                 case EXIT -> running = false;
             }
@@ -166,6 +167,16 @@ public class Dialog extends UserInterface {
 
         boolean isDeleted = auth.deleteAccount(username, password);
         System.out.println(isDeleted ? "Konto erfolgreich gelöscht!" : "Benutzername oder Passwort falsch, Konto konnte nicht gelöscht werden.");
+    }
+
+    private void handleDailyWordle() {
+        WordSeeder.fillIfEmpty();
+        DailyWordleRepository.createDailyTable();
+        DailyWordle dw = new DailyWordle(new DailyWordleRepository(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
+        System.out.println("Bitte gebe dein wort ein: ");
+        String word = input.nextLine();
+        dw.checkWord(word);
+
     }
 
     public void gameWon(String message) {

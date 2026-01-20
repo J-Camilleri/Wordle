@@ -36,7 +36,7 @@ public class DatabaseManager {
         try {
             ScoreboardRepository.createScoreboard();
             UserRepository.createTable();
-            DailyWordle.createDailyTable();
+            DailyWordleRepository.createDailyTable();
         } catch (Exception e) {
             System.out.println("Fehler beim initialisieren der DB" + e.getMessage());
         }
