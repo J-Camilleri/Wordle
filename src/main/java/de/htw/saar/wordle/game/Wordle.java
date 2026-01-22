@@ -1,5 +1,7 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.GameRepository;
+import de.htw.saar.wordle.game.Presentation.Dialog;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Languages;
 import org.languagetool.rules.Rule;
@@ -12,6 +14,8 @@ import java.util.ArrayList;
 public class Wordle {
 
     private int gameId;
+    private GameRepository gameRepo;
+    private Dialog ui = new Dialog();
     private final GameConfig config;
     private final String wordleWord;
     private final Grid[][] board;
@@ -24,6 +28,7 @@ public class Wordle {
 
     private final JLanguageTool TOOL;
     private WordProvider provider;
+
 
 
     // Konstruktor um neues Game zu erstellen
@@ -78,9 +83,13 @@ public class Wordle {
         return tool;
     }
 
+    public void checkWord(){
+        String userInput = ui.readWord();
+        checkWord(userInput);
+    }
+
     //TODO Möglicherweise die einzelnen For-Schleifen als einzelne Methoden machen für bessere Lesbarkeit
     public void checkWord(String userInput) {
-        userInput = userInput.toUpperCase();
         int length = config.getWordlength();
         boolean[] used = new boolean[length];
 

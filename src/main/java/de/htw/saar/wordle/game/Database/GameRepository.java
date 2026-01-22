@@ -4,12 +4,17 @@ import de.htw.saar.wordle.game.DatabaseManager;
 import de.htw.saar.wordle.game.Difficulty;
 import de.htw.saar.wordle.game.GameConfig;
 import de.htw.saar.wordle.game.Wordle;
+import de.htw.saar.wordle.jooq.tables.records.GamesRecord;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import static de.htw.saar.wordle.jooq.tables.Games.GAMES;
 
 public class GameRepository {
 
@@ -18,51 +23,37 @@ public class GameRepository {
     private static final int STATUS_ACTIVE = 2;
 
     public boolean saveGame(int userId, Wordle game) {
-
         int wordId = getWordId(game.getWordleWord());
-        if (wordId == -1) { // unsicher -1 richtig ist. Aber auf StackOverflow wird so gelöst
-            System.out.println("Das Wort: " + game.getWordleWord() + " wurde nicht in der Datenbank gefunden.");
-            return false;
-        }
+        if (wordId == -1) return false;
 
         int activeGameId = getActiveGameId(userId);
 
-        // Daten vorbereiten
         String guessesString = String.join(",", game.getGuessedWords());
         String difficultyName = game.getConfig().getDifficulty().name();
 
         try (Connection con = DatabaseManager.connect()) {
+            DSLContext ctx = DSL.using(con);
+
+            GamesRecord record;
+
             if (activeGameId == -1) {
-                // INSERT: Neues Spiel starten
-                String insertSql = """
-                    INSERT INTO games (user_id, word_id, attempts_count, is_won, guesses, difficulty)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """;
-                try (PreparedStatement ps = con.prepareStatement(insertSql)) {
-                    ps.setInt(1, userId);
-                    ps.setInt(2, wordId);
-                    ps.setInt(3, game.getAttempt());
-                    ps.setInt(4, STATUS_ACTIVE); // Markiert als "Laufend"
-                    ps.setString(5, guessesString);
-                    ps.setString(6, difficultyName);
-                    ps.executeUpdate();
-                }
+                record = ctx.newRecord(GAMES);
             } else {
-                // UPDATE: Vorhandenes Spiel aktualisieren
-                String updateSql = """
-                    UPDATE games 
-                    SET attempts_count = ?, guesses = ?, difficulty = ?
-                    WHERE id = ?
-                """;
-                try (PreparedStatement ps = con.prepareStatement(updateSql)) {
-                    ps.setInt(1, game.getAttempt());
-                    ps.setString(2, guessesString);
-                    ps.setString(3, difficultyName);
-                    ps.setInt(4, activeGameId);
-                    ps.executeUpdate();
-                }
+                record = ctx.fetchOne(GAMES, GAMES.ID.eq(activeGameId));
+                if (record == null) return false;
             }
+
+            record.setUserId(userId);
+            record.setWordId(wordId);
+            record.setAttemptsCount(game.getAttempt());
+            record.setGuesses(guessesString);
+            record.setDifficulty(difficultyName);
+            record.setIsWon(STATUS_ACTIVE);
+
+            record.store();
+
             return true;
+
         } catch (SQLException e) {
             System.out.println("DB Fehler beim Speichern: " + e.getMessage());
             return false;

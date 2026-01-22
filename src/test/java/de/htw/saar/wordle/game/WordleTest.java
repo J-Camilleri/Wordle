@@ -1,5 +1,6 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Presentation.Dialog;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ class MockWordProvider implements WordProvider {
 
 class WordleTest {
 
+    private Dialog ui;
 
     @Test
     void testCheckWord_AllGreen() {

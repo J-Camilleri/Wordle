@@ -49,24 +49,24 @@ class AuthenticationServiceTest {
     @Test
     void testCreateUser() {
         auth.register("carol", "secret");
-        assertTrue(auth.login("carol", "secret"));
+        assertTrue(auth.login("carol", "secret").isPresent());
     }
 
     @Test
     void testLoginUser() {
         auth.register("dave", "password");
-        assertTrue(auth.login("dave", "password"));
+        assertTrue(auth.login("dave", "password").isPresent());
     }
 
     @Test
     void testLoginWrongPassword() {
         auth.register("erin", "correct");
-        assertFalse(auth.login("erin", "wrong"));
+        assertFalse(auth.login("erin", "wrong").isPresent());
     }
 
     @Test
     void testLoginUserNotInDb() {
-        assertFalse(auth.login("ghost", "whatever"));
+        assertFalse(auth.login("ghost", "whatever").isPresent());
     }
 
     @Test
@@ -76,7 +76,7 @@ class AuthenticationServiceTest {
         boolean deleted = auth.deleteAccount("frank", "1234");
 
         assertTrue(deleted);
-        assertFalse(auth.login("frank", "1234"));
+        assertFalse(auth.login("frank", "1234").isPresent());
     }
 
     @Test
@@ -86,7 +86,7 @@ class AuthenticationServiceTest {
         boolean deleted = auth.deleteAccount("gina", "wrong");
 
         assertFalse(deleted);
-        assertTrue(auth.login("gina", "pw"));
+        assertTrue(auth.login("gina", "pw").isPresent());
     }
 
     @Test
