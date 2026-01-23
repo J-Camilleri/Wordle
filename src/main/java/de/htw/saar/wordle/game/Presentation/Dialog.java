@@ -1,13 +1,16 @@
 package de.htw.saar.wordle.game.Presentation;
 
 import de.htw.saar.wordle.game.*;
+import de.htw.saar.wordle.game.Database.GameRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
 import de.htw.saar.wordle.game.LoginSystem.AuthenticationService;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
-public class Dialog extends UserInterface {
+public class Dialog extends UserInterface implements GameUI {
 
     private Scanner input;
     private static final int LOGIN = 1;
@@ -28,17 +31,20 @@ public class Dialog extends UserInterface {
     private State state = State.LOGIN_MENU;
     private boolean running = true;
     private Wordle currentGame;
-
+    private User loggedInUser;
     UserRepository userRepository = new UserRepository();
+    GameRepository gameRepo = new GameRepository();
     AuthenticationService auth = new AuthenticationService(userRepository);
+
 
     public Dialog() {
         input = new Scanner(System.in);
         currentGame = null;
+
     }
 
     public void start() {
-        while(running) {
+        while (running) {
             switch (state) {
                 case LOGIN_MENU -> showLoginMenu();
                 case LOGIN -> handleLogin();
@@ -56,17 +62,15 @@ public class Dialog extends UserInterface {
         int result = -1;
         String line;
 
-        while(result < 0) {
+        while (result < 0) {
             try {
                 line = input.nextLine();
                 result = Integer.parseInt(line);
-                if(result < 0)
+                if (result < 0)
                     System.out.println("You entered a negative integer. Please try again.");
-            }
-            catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 System.out.println("Error, Please enter an integer value");
-            }
-            catch(NoSuchElementException e) {
+            } catch (NoSuchElementException e) {
                 System.out.println(e.getMessage());
             }
 
@@ -132,13 +136,13 @@ public class Dialog extends UserInterface {
         System.out.println("Passwort: ");
         String password = input.nextLine();
 
-        boolean success = auth.login(username, password);
-        if(success) {
+        auth.login(username, password).ifPresentOrElse(user -> {
+            loggedInUser = user;
             System.out.println("Login Erfolgreich");
             state = State.MAIN_MENU;
-        } else {
+        }, () -> {
             System.out.println("Benutzername oder Passwort falsch");
-        }
+        });
     }
 
     private void handleRegister() {
@@ -149,7 +153,7 @@ public class Dialog extends UserInterface {
         String password = input.nextLine();
 
         boolean success = auth.register(username, password);
-        if(success) {
+        if (success) {
             System.out.println("Registrierung erfolgreich!");
             System.out.println("Bitte Melde dich erneut an um fortzufahren");
             state = State.LOGIN;
@@ -172,32 +176,36 @@ public class Dialog extends UserInterface {
     private void handleDailyWordle() {
         WordSeeder.fillIfEmpty();
         DailyWordleRepository.createDailyTable();
-        DailyWordle dw = new DailyWordle(new DailyWordleRepository(), GameConfig.createThroughDifficulty(Difficulty.NORMAL));
-        System.out.println("Bitte gebe dein wort ein: ");
-        String word = input.nextLine();
-        dw.checkWord(word);
-
+        DailyWordle dw = new DailyWordle(new DailyWordleRepository(), GameConfig.createThroughDifficulty(Difficulty.NORMAL),loggedInUser,gameRepo);
+        dw.gameLoop();
     }
 
+    @Override
     public void gameWon(String message) {
         System.out.println(message);
         System.out.println("Press some key to continue");
         try {
             input.next();
-        }
-        catch (NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             System.out.println(e);
         }
     }
 
+    @Override
     public void gameLost(String message) {
         System.out.println(message);
         System.out.println("Press some key to continue");
         try {
             input.next();
-        }
-        catch (NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             System.out.println(e);
         }
     }
+
+    @Override
+    public String readWord() {
+        System.out.println("Bitte gebe dein Wort ein:");
+        return input.nextLine().toUpperCase();
+    }
+
 }

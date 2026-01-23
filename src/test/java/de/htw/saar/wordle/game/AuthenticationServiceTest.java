@@ -17,7 +17,7 @@ class AuthenticationServiceTest {
     private static final String TEST_DB = "wordle_test.db";
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
 
         DatabaseManager.setDbName(TEST_DB);
         File dbFile = new File(TEST_DB);
@@ -26,22 +26,6 @@ class AuthenticationServiceTest {
         }
         DatabaseManager.dbInit();
 
-//        // tabellen werden nicht automatisch von sqllite erstellt. daher:
-//        try (Connection conn = DatabaseManager.connect();
-//             Statement stmt = conn.createStatement()) {
-//
-//            String sql = "CREATE TABLE IF NOT EXISTS users (" +
-//                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-//                    "username TEXT NOT NULL UNIQUE," +
-//                    "password_hash TEXT NOT NULL," +
-//                    "created_at TEXT DEFAULT CURRENT_TIMESTAMP" +
-//                    ");";
-//            stmt.execute(sql);
-//
-//        } catch (SQLException e) {
-//            fail("Setup fehlgeschlagen: " + e.getMessage());
-//        }
-
         UserRepository repo = new UserRepository();
         auth = new AuthenticationService(repo);
     }
@@ -49,24 +33,24 @@ class AuthenticationServiceTest {
     @Test
     void testCreateUser() {
         auth.register("carol", "secret");
-        assertTrue(auth.login("carol", "secret"));
+        assertTrue(auth.login("carol", "secret").isPresent());
     }
 
     @Test
     void testLoginUser() {
         auth.register("dave", "password");
-        assertTrue(auth.login("dave", "password"));
+        assertTrue(auth.login("dave", "password").isPresent());
     }
 
     @Test
     void testLoginWrongPassword() {
         auth.register("erin", "correct");
-        assertFalse(auth.login("erin", "wrong"));
+        assertFalse(auth.login("erin", "wrong").isPresent());
     }
 
     @Test
     void testLoginUserNotInDb() {
-        assertFalse(auth.login("ghost", "whatever"));
+        assertFalse(auth.login("ghost", "whatever").isPresent());
     }
 
     @Test
@@ -76,7 +60,7 @@ class AuthenticationServiceTest {
         boolean deleted = auth.deleteAccount("frank", "1234");
 
         assertTrue(deleted);
-        assertFalse(auth.login("frank", "1234"));
+        assertFalse(auth.login("frank", "1234").isPresent());
     }
 
     @Test
@@ -86,25 +70,12 @@ class AuthenticationServiceTest {
         boolean deleted = auth.deleteAccount("gina", "wrong");
 
         assertFalse(deleted);
-        assertTrue(auth.login("gina", "pw"));
+        assertTrue(auth.login("gina", "pw").isPresent());
     }
 
     @Test
     void testDeleteUserNotInDb() {
         boolean deleted = auth.deleteAccount("nobody", "pw");
         assertFalse(deleted);
-    }
-
-    @AfterEach
-    void tearDown() {
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("DELETE FROM scoreboard");
-            stmt.execute("DELETE FROM users");
-
-
-        } catch (SQLException e) {
-            fail("Cleanup fehlgeschlagen: " + e.getMessage());
-        }
     }
 }

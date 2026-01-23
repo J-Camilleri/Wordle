@@ -2,6 +2,8 @@ package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.*;
 
 import java.io.File;
@@ -11,6 +13,8 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
+import static de.htw.saar.wordle.jooq.tables.Scoreboard.SCOREBOARD;
+import static de.htw.saar.wordle.jooq.tables.Users.USERS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserRepositoryTest {
@@ -21,35 +25,26 @@ class UserRepositoryTest {
     private static final String TEST_DB = "wordle_test.db";
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
+        try {
+            DatabaseManager.setDbName(TEST_DB);
+            File dbFile = new File(TEST_DB);
+            if (dbFile.exists()) dbFile.delete();
 
-        DatabaseManager.setDbName(TEST_DB);
-        File dbFile = new File(TEST_DB);
-        if (dbFile.exists()) {
-            dbFile.delete();
+            DatabaseManager.dbInit();
+
+            userRepo = new UserRepository();
+            scoreboardRepo = new ScoreboardRepository();
+
+            try (Connection conn = DatabaseManager.connect()) {
+                if (conn == null) fail("Keine Verbindung zur DB");
+                DSLContext dsl = DSL.using(conn);
+                dsl.deleteFrom(SCOREBOARD).execute();
+                dsl.deleteFrom(USERS).execute();
+            }
+        } catch (Exception e) {
+            fail("Setup fehlgeschlagen: " + e.getMessage());
         }
-
-        DatabaseManager.dbInit();
-
-//        // tabellen werden nicht automatisch von sqllite erstellt. daher:
-//        try (Connection conn = DatabaseManager.connect();
-//             Statement stmt = conn.createStatement()) {
-//
-//            String sql = "CREATE TABLE IF NOT EXISTS users (" +
-//                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-//                    "username TEXT NOT NULL UNIQUE," +
-//                    "password_hash TEXT NOT NULL," +
-//                    "created_at TEXT DEFAULT CURRENT_TIMESTAMP" +
-//                    ");";
-//            stmt.execute(sql);
-//
-//        } catch (SQLException e) {
-//            fail("Setup fehlgeschlagen: " + e.getMessage());
-//        }
-
-        userRepo = new UserRepository();
-        scoreboardRepo = new ScoreboardRepository();
-
     }
 
     @Test
@@ -96,7 +91,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    void save_createsScoreboardEntryWithZeroScore() throws SQLException {
+    void save_createsScoreboardEntryWithZeroScore() {
         userRepo.save("carol", "hash1");
         userRepo.save("peter", "hash2");
 
@@ -110,19 +105,5 @@ class UserRepositoryTest {
                 .orElseThrow();
 
         assertEquals(0, carolEntry.score());
-    }
-
-    @AfterEach
-    void tearDown() {
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-            stmt.execute("DELETE FROM scoreboard");
-
-            stmt.execute("DELETE FROM users");
-
-        } catch (SQLException e) {
-            fail("Cleanup fehlgeschlagen: " + e.getMessage());
-        }
     }
 }

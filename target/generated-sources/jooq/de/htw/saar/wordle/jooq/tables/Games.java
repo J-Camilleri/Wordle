@@ -6,16 +6,24 @@ package de.htw.saar.wordle.jooq.tables;
 
 import de.htw.saar.wordle.jooq.DefaultSchema;
 import de.htw.saar.wordle.jooq.Keys;
+import de.htw.saar.wordle.jooq.tables.Users.UsersPath;
+import de.htw.saar.wordle.jooq.tables.Words.WordsPath;
 import de.htw.saar.wordle.jooq.tables.records.GamesRecord;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.ForeignKey;
 import org.jooq.Identity;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
 import org.jooq.PlainSQL;
 import org.jooq.QueryPart;
+import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
 import org.jooq.Select;
@@ -114,6 +122,39 @@ public class Games extends TableImpl<GamesRecord> {
         this(DSL.name("games"), null);
     }
 
+    public <O extends Record> Games(Table<O> path, ForeignKey<O, GamesRecord> childPath, InverseForeignKey<O, GamesRecord> parentPath) {
+        super(path, childPath, parentPath, GAMES);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class GamesPath extends Games implements Path<GamesRecord> {
+
+        private static final long serialVersionUID = 1L;
+        public <O extends Record> GamesPath(Table<O> path, ForeignKey<O, GamesRecord> childPath, InverseForeignKey<O, GamesRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private GamesPath(Name alias, Table<GamesRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public GamesPath as(String alias) {
+            return new GamesPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public GamesPath as(Name alias) {
+            return new GamesPath(alias, this);
+        }
+
+        @Override
+        public GamesPath as(Table<?> alias) {
+            return new GamesPath(alias.getQualifiedName(), this);
+        }
+    }
+
     @Override
     public Schema getSchema() {
         return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
@@ -127,6 +168,35 @@ public class Games extends TableImpl<GamesRecord> {
     @Override
     public UniqueKey<GamesRecord> getPrimaryKey() {
         return Keys.GAMES__PK_GAMES;
+    }
+
+    @Override
+    public List<ForeignKey<GamesRecord, ?>> getReferences() {
+        return Arrays.asList(Keys.GAMES__FK_GAMES_PK_USERS, Keys.GAMES__FK_GAMES_PK_WORDS);
+    }
+
+    private transient UsersPath _users;
+
+    /**
+     * Get the implicit join path to the <code>users</code> table.
+     */
+    public UsersPath users() {
+        if (_users == null)
+            _users = new UsersPath(this, Keys.GAMES__FK_GAMES_PK_USERS, null);
+
+        return _users;
+    }
+
+    private transient WordsPath _words;
+
+    /**
+     * Get the implicit join path to the <code>words</code> table.
+     */
+    public WordsPath words() {
+        if (_words == null)
+            _words = new WordsPath(this, Keys.GAMES__FK_GAMES_PK_WORDS, null);
+
+        return _words;
     }
 
     @Override

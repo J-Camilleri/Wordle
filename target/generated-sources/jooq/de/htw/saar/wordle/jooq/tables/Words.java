@@ -6,6 +6,8 @@ package de.htw.saar.wordle.jooq.tables;
 
 import de.htw.saar.wordle.jooq.DefaultSchema;
 import de.htw.saar.wordle.jooq.Keys;
+import de.htw.saar.wordle.jooq.tables.DailyWords.DailyWordsPath;
+import de.htw.saar.wordle.jooq.tables.Games.GamesPath;
 import de.htw.saar.wordle.jooq.tables.records.WordsRecord;
 
 import java.util.Arrays;
@@ -14,10 +16,14 @@ import java.util.List;
 
 import org.jooq.Condition;
 import org.jooq.Field;
+import org.jooq.ForeignKey;
 import org.jooq.Identity;
+import org.jooq.InverseForeignKey;
 import org.jooq.Name;
+import org.jooq.Path;
 import org.jooq.PlainSQL;
 import org.jooq.QueryPart;
+import org.jooq.Record;
 import org.jooq.SQL;
 import org.jooq.Schema;
 import org.jooq.Select;
@@ -101,6 +107,39 @@ public class Words extends TableImpl<WordsRecord> {
         this(DSL.name("words"), null);
     }
 
+    public <O extends Record> Words(Table<O> path, ForeignKey<O, WordsRecord> childPath, InverseForeignKey<O, WordsRecord> parentPath) {
+        super(path, childPath, parentPath, WORDS);
+    }
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    public static class WordsPath extends Words implements Path<WordsRecord> {
+
+        private static final long serialVersionUID = 1L;
+        public <O extends Record> WordsPath(Table<O> path, ForeignKey<O, WordsRecord> childPath, InverseForeignKey<O, WordsRecord> parentPath) {
+            super(path, childPath, parentPath);
+        }
+        private WordsPath(Name alias, Table<WordsRecord> aliased) {
+            super(alias, aliased);
+        }
+
+        @Override
+        public WordsPath as(String alias) {
+            return new WordsPath(DSL.name(alias), this);
+        }
+
+        @Override
+        public WordsPath as(Name alias) {
+            return new WordsPath(alias, this);
+        }
+
+        @Override
+        public WordsPath as(Table<?> alias) {
+            return new WordsPath(alias.getQualifiedName(), this);
+        }
+    }
+
     @Override
     public Schema getSchema() {
         return aliased() ? null : DefaultSchema.DEFAULT_SCHEMA;
@@ -119,6 +158,30 @@ public class Words extends TableImpl<WordsRecord> {
     @Override
     public List<UniqueKey<WordsRecord>> getUniqueKeys() {
         return Arrays.asList(Keys.WORDS__UK_WORDS_130689167);
+    }
+
+    private transient DailyWordsPath _dailyWords;
+
+    /**
+     * Get the implicit to-many join path to the <code>daily_words</code> table
+     */
+    public DailyWordsPath dailyWords() {
+        if (_dailyWords == null)
+            _dailyWords = new DailyWordsPath(this, null, Keys.DAILY_WORDS__FK_DAILY_WORDS_PK_WORDS.getInverseKey());
+
+        return _dailyWords;
+    }
+
+    private transient GamesPath _games;
+
+    /**
+     * Get the implicit to-many join path to the <code>games</code> table
+     */
+    public GamesPath games() {
+        if (_games == null)
+            _games = new GamesPath(this, null, Keys.GAMES__FK_GAMES_PK_WORDS.getInverseKey());
+
+        return _games;
     }
 
     @Override

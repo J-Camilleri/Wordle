@@ -4,6 +4,7 @@
 package de.htw.saar.wordle.jooq;
 
 
+import de.htw.saar.wordle.jooq.tables.DailyWords;
 import de.htw.saar.wordle.jooq.tables.Games;
 import de.htw.saar.wordle.jooq.tables.PracticeWords;
 import de.htw.saar.wordle.jooq.tables.Scoreboard;
@@ -30,6 +31,11 @@ public class DefaultSchema extends SchemaImpl {
      * The reference instance of <code>DEFAULT_SCHEMA</code>
      */
     public static final DefaultSchema DEFAULT_SCHEMA = new DefaultSchema();
+
+    /**
+     * The table <code>daily_words</code>.
+     */
+    public final DailyWords DAILY_WORDS = DailyWords.DAILY_WORDS;
 
     /**
      * The table <code>games</code>.
@@ -72,6 +78,7 @@ public class DefaultSchema extends SchemaImpl {
     @Override
     public final List<Table<?>> getTables() {
         return Arrays.asList(
+            DailyWords.DAILY_WORDS,
             Games.GAMES,
             PracticeWords.PRACTICE_WORDS,
             Scoreboard.SCOREBOARD,

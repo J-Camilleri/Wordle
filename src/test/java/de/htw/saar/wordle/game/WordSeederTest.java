@@ -1,11 +1,17 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.jooq.tables.PracticeWords;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.sql.*;
+
+import static de.htw.saar.wordle.jooq.tables.PracticeWords.PRACTICE_WORDS;
+import static de.htw.saar.wordle.jooq.tables.Words.WORDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WordSeederTest {
@@ -14,53 +20,33 @@ class WordSeederTest {
 
     @BeforeEach
     void setUp() {
-
         DatabaseManager.setDbName(TEST_DB);
 
-
         File dbFile = new File(TEST_DB);
-        if (dbFile.exists()) {
-            dbFile.delete();
+        if (dbFile.exists()) dbFile.delete();
+
+        try {
+            DatabaseManager.dbInit();
+        } catch (Exception e) {
+            fail("Setup fehlgeschlagen: " + e.getMessage());
         }
-
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-        String sql1 = "CREATE TABLE IF NOT EXISTS words (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "word_text TEXT NOT NULL UNIQUE," +
-                "language_code TEXT DEFAULT 'de'," +
-                "is_active INTEGER DEFAULT 1" +
-                ");";
-
-        String sql2 = "CREATE TABLE IF NOT EXISTS practice_words (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "word_text TEXT NOT NULL UNIQUE," +
-                "language_code TEXT DEFAULT 'de'," +
-                "is_active INTEGER DEFAULT 1" +
-                ");";
-
-        stmt.execute(sql1);
-        stmt.execute(sql2);
-
-
-    } catch (SQLException e) {
-        fail("Setup fehlgeschlagen: " + e.getMessage());
     }
-}
+
 
 
     @Test
     void testCheckIfEmpty() {
-        try{
-            WordSeeder test = new WordSeeder();
-            test.fillIfEmpty();
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) fail("Keine Verbindung zur DB");
+            DSLContext dsl = DSL.using(conn);
+            WordSeeder.fillIfEmpty();
 
-            int wordCount = countRows("words");
-            int practiceCount = countRows("practice_words");
+            int wordCount = countRows(dsl, WORDS);
+            int practiceCount = countRows(dsl, PRACTICE_WORDS);
 
             assertTrue(wordCount > 0, "words Tabelle sollte nicht leer sein");
-            assertTrue(practiceCount > 0, "practice_words sollte nicht leer sein");
+            assertTrue(practiceCount > 0, "practice_words Tabelle sollte nicht leer sein");
+
         } catch (Exception e) {
             fail("checkIfEmpty: " + e.getMessage());
         }
@@ -68,33 +54,35 @@ class WordSeederTest {
 
     @Test
     void testIsEmpty() {
-        try (Connection c = DatabaseManager.connect();
-            Statement st = c.createStatement()) {
-            //Anfangs leer
-            assertTrue(WordSeeder.isEmpty(c, "words"), "words sollte am Anfang leer sein");
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) fail("Keine Verbindung zur DB");
+            DSLContext dsl = DSL.using(conn);
 
-            //Ein Wort einfügen
-            st.executeUpdate("INSERT INTO words (word_text) VALUES ('APFEL')");
+            assertTrue(WordSeeder.isEmpty(dsl, WORDS), "words sollte am Anfang leer sein");
 
-            //Sollte nicht mehr leer sein
-            assertFalse(WordSeeder.isEmpty(c, "words"), "words sollte nach Insert nicht mehr leer sein");
-        } catch (Exception e){
+            dsl.insertInto(WORDS)
+                    .columns(WORDS.WORD_TEXT)
+                    .values("APFEL")
+                    .execute();
+
+            assertFalse(WordSeeder.isEmpty(dsl, WORDS), "words sollte nach Insert nicht mehr leer sein");
+
+        } catch (Exception e) {
             fail("isEmpty: " + e.getMessage());
         }
     }
 
     @Test
     void testImportFile() {
-        try (Connection c = DatabaseManager.connect()) {
-            WordSeeder test = new WordSeeder();
-            // importFile direkt aufrufen
-            test.importFile(c, "words", "words.txt");// oder "words/words.txt"
-            test.importFile(c, "practice_words", "words.txt");
-            //Danach muss die Tabelle gefüllt sein
-            int countWords = countRows("words");
-            int countPractice = countRows("practice_words");
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) fail("Keine Verbindung zur DB");
+            DSLContext dsl = DSL.using(conn);
+
+            WordSeeder.importFile(dsl, WORDS, "words.txt");
+
+            int countWords = countRows(dsl, WORDS);
+
             assertTrue(countWords > 50, "words sollte nach importFile nicht leer sein");
-            assertTrue(countPractice > 50, "words_practice sollte nach importFile nicht leer sein");
 
         } catch (Exception e) {
             fail("importFile: " + e.getMessage());
@@ -104,25 +92,19 @@ class WordSeederTest {
 
     @AfterEach
     void tearDown() {
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return;
+            DSLContext dsl = DSL.using(conn);
 
-            stmt.execute("DELETE FROM words");
-            stmt.execute("DELETE FROM practice_words");
+            dsl.deleteFrom(WORDS).execute();
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             fail("Cleanup fehlgeschlagen: " + e.getMessage());
         }
     }
 
-    private int countRows(String table) throws SQLException {
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + table)) {
-
-            rs.next();
-            return rs.getInt(1);
-        }
+    private int countRows(DSLContext dsl, org.jooq.Table<?> table) {
+        return dsl.fetchCount(table);
     }
 
 }

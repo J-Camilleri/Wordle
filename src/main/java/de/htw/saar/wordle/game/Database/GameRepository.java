@@ -1,15 +1,18 @@
 package de.htw.saar.wordle.game.Database;
 
-import de.htw.saar.wordle.game.DatabaseManager;
-import de.htw.saar.wordle.game.Difficulty;
-import de.htw.saar.wordle.game.GameConfig;
-import de.htw.saar.wordle.game.Wordle;
+import de.htw.saar.wordle.game.*;
+import de.htw.saar.wordle.jooq.tables.records.GamesRecord;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 
-import java.sql.*;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import static de.htw.saar.wordle.jooq.tables.Games.GAMES;
+import static de.htw.saar.wordle.jooq.tables.Words.WORDS;
 
 public class GameRepository {
 
@@ -18,135 +21,129 @@ public class GameRepository {
     private static final int STATUS_ACTIVE = 2;
 
     public boolean saveGame(int userId, Wordle game) {
+        try (Connection conn = DatabaseManager.connect()){
+            if(conn == null)return false;
 
-        int wordId = getWordId(game.getWordleWord());
-        if (wordId == -1) { // unsicher -1 richtig ist. Aber auf StackOverflow wird so gelöst
-            System.out.println("Das Wort: " + game.getWordleWord() + " wurde nicht in der Datenbank gefunden.");
-            return false;
-        }
+            DSLContext dsl = DSL.using(conn);
 
-        int activeGameId = getActiveGameId(userId);
+            Integer wordId = dsl
+                    .select(WORDS.ID)
+                    .from(WORDS)
+                    .where(WORDS.WORD_TEXT.eq(game.getWordleWord()))
+                    .fetchOneInto(Integer.class);
 
-        // Daten vorbereiten
-        String guessesString = String.join(",", game.getGuessedWords());
-        String difficultyName = game.getConfig().getDifficulty().name();
+            if (wordId == null) return false;
 
-        try (Connection con = DatabaseManager.connect()) {
-            if (activeGameId == -1) {
-                // INSERT: Neues Spiel starten
-                String insertSql = """
-                    INSERT INTO games (user_id, word_id, attempts_count, is_won, guesses, difficulty)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """;
-                try (PreparedStatement ps = con.prepareStatement(insertSql)) {
-                    ps.setInt(1, userId);
-                    ps.setInt(2, wordId);
-                    ps.setInt(3, game.getAttempt());
-                    ps.setInt(4, STATUS_ACTIVE); // Markiert als "Laufend"
-                    ps.setString(5, guessesString);
-                    ps.setString(6, difficultyName);
-                    ps.executeUpdate();
-                }
-            } else {
-                // UPDATE: Vorhandenes Spiel aktualisieren
-                String updateSql = """
-                    UPDATE games 
-                    SET attempts_count = ?, guesses = ?, difficulty = ?
-                    WHERE id = ?
-                """;
-                try (PreparedStatement ps = con.prepareStatement(updateSql)) {
-                    ps.setInt(1, game.getAttempt());
-                    ps.setString(2, guessesString);
-                    ps.setString(3, difficultyName);
-                    ps.setInt(4, activeGameId);
-                    ps.executeUpdate();
-                }
-            }
+            Integer activeGameId = dsl
+                    .select(GAMES.ID)
+                    .from(GAMES)
+                    .where(GAMES.USER_ID.eq(userId))
+                    .and(GAMES.IS_WON.eq(STATUS_ACTIVE))
+                    .fetchOneInto(Integer.class);
+
+            GamesRecord record = (activeGameId == null)
+                    ? dsl.newRecord(GAMES)
+                    : dsl.fetchOne(GAMES, GAMES.ID.eq(activeGameId));
+
+            if (record == null) return false;
+
+            record.setUserId(userId);
+            record.setWordId(wordId);
+            record.setAttemptsCount(game.getAttempt());
+            record.setGuesses(String.join(",", game.getGuessedWords()));
+            record.setDifficulty(game.getConfig().getDifficulty().name());
+            record.setIsWon(STATUS_ACTIVE);
+
+            record.store();
             return true;
-        } catch (SQLException e) {
-            System.out.println("DB Fehler beim Speichern: " + e.getMessage());
-            return false;
+        } catch (Exception e) {
+        System.out.println("Fehler beim Speichern des Spiels: " + e.getMessage());
+        return false;
         }
     }
 
 
     public Optional<Wordle> loadGame(int userId) {
-        String sql = """
-            SELECT g.id, g.guesses, g.difficulty, w.word_text
-            FROM games g
-            JOIN words w ON g.word_id = w.id
-            WHERE g.user_id = ? AND g.is_won = ?
-       """;
 
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return Optional.empty();
 
-            ps.setInt(1, userId);
-            ps.setInt(2, STATUS_ACTIVE); // Nur laufende Spiele laden
+            DSLContext dsl = DSL.using(conn);
 
-            ResultSet rs = ps.executeQuery();
+            return dsl
+                    .select(
+                            GAMES.ID,
+                            GAMES.GUESSES,
+                            GAMES.DIFFICULTY,
+                            WORDS.WORD_TEXT
+                    )
+                    .from(GAMES)
+                    .join(WORDS).on(GAMES.WORD_ID.eq(WORDS.ID))
+                    .where(GAMES.USER_ID.eq(userId))
+                    .and(GAMES.IS_WON.eq(STATUS_ACTIVE))
+                    .fetchOptional(record -> {
 
-            if (rs.next()) {
-                int gameId = rs.getInt("id");
-                String targetWord = rs.getString("word_text");
-                String guessesStr = rs.getString("guesses");
-                String difficultyStr = rs.getString("difficulty");
+                        int gameId = record.get(GAMES.ID);
+                        String targetWord = record.get(WORDS.WORD_TEXT);
+                        String guessesStr = record.get(GAMES.GUESSES);
 
-                Difficulty diff = Difficulty.valueOf(difficultyStr);
+                        Difficulty diff =
+                                Difficulty.valueOf(record.get(GAMES.DIFFICULTY));
 
-                GameConfig config = GameConfig.createThroughDifficulty(diff);
+                        GameConfig config =
+                                GameConfig.createThroughDifficulty(diff);
 
-                // String "A,B,C" -> Liste ["A", "B", "C"]
-                List<String> guesses = new ArrayList<>();
-                if (guessesStr != null && !guessesStr.isEmpty()) {
-                    guesses = Arrays.asList(guessesStr.split(","));
-                }
+                        List<String> guesses = new ArrayList<>();
+                        if (guessesStr != null && !guessesStr.isEmpty()) {
+                            guesses.addAll(Arrays.asList(guessesStr.split(",")));
+                        }
 
-                return Optional.of(new Wordle(config, gameId, targetWord, guesses));
-            }
-        } catch (SQLException e) {
-            System.out.println("Fehler beim Laden: " + e.getMessage());
+                        return new Wordle(config, gameId, targetWord, guesses);
+                    });
+        }catch (Exception e){
+            System.out.println("Fehler beim Laden des Spiels: " + e.getMessage());
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     public void finishGame(int userId, boolean won) {
-        String sql = "UPDATE games SET is_won = ? WHERE user_id = ? AND is_won = 2";
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, won ? STATUS_WON : STATUS_LOST);
-            ps.setInt(2, userId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
+
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return;
+
+            DSLContext dsl = DSL.using(conn);
+
+            dsl.update(GAMES)
+                    .set(GAMES.IS_WON, won ? STATUS_WON : STATUS_LOST)
+                    .where(GAMES.USER_ID.eq(userId))
+                    .and(GAMES.IS_WON.eq(STATUS_ACTIVE))
+                    .execute();
+        } catch (Exception e) {
             System.out.println("Fehler beim Beenden des Spiels: " + e.getMessage());
         }
     }
 
-    // Hilfsmethoden für oben
-    private int getActiveGameId(int userId) {
-        String sql = "SELECT id FROM games WHERE user_id = ? AND is_won = 2";
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt("id");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return -1;
-    }
+    public static void createGamesTable() {
+        String sql = """
+        CREATE TABLE IF NOT EXISTS games (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            word_id INTEGER,
+            attempts_count INTEGER,
+            is_won INTEGER,
+            guesses TEXT,
+            difficulty TEXT,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(word_id) REFERENCES words(id)
+        );
+    """;
 
-    private int getWordId(String wordText) {
-        String sql = "SELECT id FROM words WHERE word_text = ?";
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, wordText);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt("id");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
+        try (var conn = DatabaseManager.connect()) {
+            if (conn == null) throw new RuntimeException("Keine Verbindung zur DB");
+            DSLContext dsl = DSL.using(conn);
+            dsl.execute(sql);
+        } catch (Exception e) {
+            System.out.println("Fehler beim Erstellen der Tabelle games: " + e.getMessage());
         }
-        return -1;
     }
-
 }

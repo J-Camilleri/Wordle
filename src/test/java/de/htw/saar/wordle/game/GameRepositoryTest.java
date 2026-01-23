@@ -1,6 +1,9 @@
 package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +16,9 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
+import static de.htw.saar.wordle.jooq.tables.Games.GAMES;
+import static de.htw.saar.wordle.jooq.tables.Users.USERS;
+import static de.htw.saar.wordle.jooq.tables.Words.WORDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GameRepositoryTest {
@@ -27,55 +33,53 @@ class GameRepositoryTest {
     }
 
     @BeforeEach
-    void setUp() throws SQLException {
-        gameRepository = new GameRepository();
+    void setUp() {
+        try {
+            DatabaseManager.dbInit();
+            gameRepository = new GameRepository();
 
-        DatabaseManager.dbInit();
+            try (Connection conn = DatabaseManager.connect()) {
+                if (conn == null) fail("Keine Verbindung zur DB");
+                DSLContext dsl = DSL.using(conn);
 
-        try (Connection con = DatabaseManager.connect();
-             Statement stmt = con.createStatement()) {
+                dsl.deleteFrom(GAMES).execute();
+                dsl.deleteFrom(USERS).execute();
+                dsl.deleteFrom(WORDS).execute();
 
-            // tabellen erstellen zum testen
-            stmt.execute("""
-                CREATE TABLE IF NOT EXISTS games (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER,
-                    word_id INTEGER,
-                    attempts_count INTEGER,
-                    is_won INTEGER,
-                    guesses TEXT,
-                    difficulty TEXT,
-                    FOREIGN KEY(user_id) REFERENCES users(id),
-                    FOREIGN KEY(word_id) REFERENCES words(id)
-                );
-            """);
+                dsl.insertInto(USERS)
+                        .columns(USERS.USERNAME, USERS.PASSWORD_HASH)
+                        .values("Tester", "hash123")
+                        .execute();
 
-            stmt.execute("""
-                CREATE TABLE IF NOT EXISTS words (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    word_text TEXT NOT NULL UNIQUE,
-                    language_code TEXT DEFAULT 'de',
-                    is_active INTEGER DEFAULT 1
-                );
-            """);
+                testUserId = dsl.select(USERS.ID)
+                        .from(USERS)
+                        .where(USERS.USERNAME.eq("Tester"))
+                        .fetchOne(USERS.ID);
 
-            stmt.execute("DELETE FROM games");
-            stmt.execute("DELETE FROM users");
-            stmt.execute("DELETE FROM words");
+                dsl.insertInto(WORDS)
+                        .columns(WORDS.WORD_TEXT)
+                        .values("APFEL")
+                        .execute();
 
-            stmt.execute("INSERT INTO users (username, password_hash) VALUES ('Tester', 'hash123')");
-            testUserId = stmt.getConnection().prepareStatement("SELECT id FROM users WHERE username='Tester'").executeQuery().getInt("id");
+            }
 
-            stmt.execute("INSERT INTO words (word_text) VALUES ('APFEL')");
-
+        } catch (Exception e) {
+            fail("Setup fehlgeschlagen: " + e.getMessage());
         }
     }
 
+
     @AfterEach
     void tearDown() {
-        File dbFile = new File(TEST_DB);
-        if (dbFile.exists()) {
-            dbFile.delete();
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn != null) {
+                DSLContext dsl = DSL.using(conn);
+                dsl.deleteFrom(GAMES).execute();
+                dsl.deleteFrom(USERS).execute();
+                dsl.deleteFrom(WORDS).execute();
+            }
+        } catch (Exception e) {
+            fail("Cleanup fehlgeschlagen: " + e.getMessage());
         }
     }
 
