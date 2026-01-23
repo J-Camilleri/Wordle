@@ -2,9 +2,13 @@ package de.htw.saar.wordle.game.Database;
 
 import de.htw.saar.wordle.game.DatabaseManager;
 import de.htw.saar.wordle.game.User;
+import org.jooq.DSLContext;
 
 import java.sql.*;
 import java.util.Optional;
+
+import static de.htw.saar.wordle.jooq.tables.Scoreboard.SCOREBOARD;
+import static de.htw.saar.wordle.jooq.tables.Users.USERS;
 
 public class UserRepository {
 
@@ -17,97 +21,87 @@ public class UserRepository {
             );
         """;
 
-        try (Connection con = DatabaseManager.connect();
-             Statement st = con.createStatement()) {
-            st.execute(sql);
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn != null) {
+                conn.createStatement().execute(sql);
+            }
+        } catch (SQLException e) {
+            System.out.println("Fehler beim Erstellen der User-Tabelle: " + e.getMessage());
         }
     }
 
     public boolean save(String username, String passwordHash) {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return false;
 
-        String insertUser = "INSERT INTO users(username, password_hash) VALUES (?, ?)";
-        String insertScore = "INSERT INTO scoreboard(user_id, score) VALUES (?, 0)";
-
-        try (Connection connection = DatabaseManager.connect()) {
-            connection.setAutoCommit(false); //Damit in Scoreboard direkt mit angelegt wird und zb kein User ohne Score angelegt wird (Transaktion startet)
-            //wenn  AutoCommit = false muss irgendwo commit oder rollback vorkommen sonst weiß DB nicht ob Speichern oder löschen
+            conn.setAutoCommit(false);
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
             try {
-                int userId;
 
-                //User anlegen
-                try (PreparedStatement psUser = connection.prepareStatement(insertUser, Statement.RETURN_GENERATED_KEYS)) {
-                    psUser.setString(1, username);
-                    psUser.setString(2, passwordHash);
-                    psUser.executeUpdate();
+                int userId = dsl.insertInto(USERS)
+                        .set(USERS.USERNAME, username)
+                        .set(USERS.PASSWORD_HASH, passwordHash)
+                        .returning(USERS.ID)
+                        .fetchOne()
+                        .getId();
 
-                    try (ResultSet rs = psUser.getGeneratedKeys()) {  //ID holen für Scoreboard
-                        if (!rs.next()) {
-                            throw new SQLException("Keine User_ID erzeugt");
-                        }
-                        userId = rs.getInt(1);
-                    }
+                dsl.insertInto(SCOREBOARD)
+                        .set(SCOREBOARD.USER_ID, userId)
+                        .set(SCOREBOARD.SCORE, 0)
+                        .execute();
 
-                }
-                //Scoreboardeintrag anlegen
-                try (PreparedStatement psScore = connection.prepareStatement(insertScore)) {
-                    psScore.setInt(1, userId);
-                    psScore.executeUpdate();
-                }
-                connection.commit();
+                conn.commit();
                 return true;
-            } catch (SQLException e) {
-                try {
-                    connection.rollback();
-                } catch (SQLException ex) {
-                    System.out.println("Rollback fehler" + ex.getMessage());
-                }
+
+            } catch (Exception e) {
+                conn.rollback();
                 System.out.println("Fehler beim User-Anlegen: " + e.getMessage());
                 return false;
             }
+
         } catch (SQLException e) {
-            //Fehler beim connect oder close der connection
             System.out.println("DB Fehler: " + e.getMessage());
             return false;
         }
     }
 
     public Optional<User> findByUsername(String username) {
-        String sql = "SELECT * FROM users WHERE username = ?";
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return Optional.empty();
 
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
-            ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
+            return dsl.selectFrom(USERS)
+                    .where(USERS.USERNAME.eq(username))
+                    .fetchOptional(record -> new User(
+                            record.getId(),
+                            record.getUsername(),
+                            record.getPasswordHash()
+                    ));
 
-            if (rs.next()) {
-                return Optional.of(new User(
-                        rs.getInt("id"),
-                        rs.getString("username"),
-                        rs.getString("password_hash")
-                ));
-            }
+        } catch (Exception e) {
+            System.out.println("Fehler beim Finden des Users: " + e.getMessage());
             return Optional.empty();
-        } catch(SQLException e) {
-            System.out.println(e.getMessage());
         }
-        return Optional.empty();
     }
 
+
+
     public boolean deleteByUsername(String username) {
-        String sql = "DELETE FROM users WHERE username = ?";
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return false;
 
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
-            ps.setString(1, username);
-            int affectedRows = ps.executeUpdate();
+            int deleted = dsl.deleteFrom(USERS)
+                    .where(USERS.USERNAME.eq(username))
+                    .execute();
 
-            return affectedRows > 0;
+            return deleted > 0;
 
-        } catch(SQLException e) {
-            System.out.println(e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Fehler beim Löschen des Users: " + e.getMessage());
             return false;
         }
     }

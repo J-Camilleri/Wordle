@@ -2,6 +2,8 @@ package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import static de.htw.saar.wordle.jooq.tables.Scoreboard.SCOREBOARD;
+import static de.htw.saar.wordle.jooq.tables.Users.USERS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ScoreboardRepositoryTest {
@@ -22,7 +26,7 @@ class ScoreboardRepositoryTest {
     private ScoreboardRepository scoreboardRepo;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
 
         DatabaseManager.setDbName(TEST_DB);
         File dbFile = new File(TEST_DB);
@@ -30,44 +34,51 @@ class ScoreboardRepositoryTest {
             dbFile.delete();
         }
 
-        DatabaseManager.dbInit();
+        try {
+            DatabaseManager.dbInit();
+        } catch (Exception e) {
+            fail("Setup fehlgeschlagen: " + e.getMessage());
+        }
         userRepo = new UserRepository();
         scoreboardRepo = new ScoreboardRepository();
     }
 
 
     @Test
-    void printScoreboardTest() throws SQLException {
-        // User anlegen → Score = 0 wird automatisch erstellt
+    void printScoreboardTest() {
+
         assertTrue(userRepo.save("alice", "hash1"));
         assertTrue(userRepo.save("bob", "hash2"));
         assertTrue(userRepo.save("carol", "hash3"));
 
-        // Scores gezielt setzen
-        try (Connection con = DatabaseManager.connect()) {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) fail("Keine Verbindung zur DB");
+
+            DSLContext dsl = DSL.using(conn);
+
             // bob = 10 Punkte
-            try (PreparedStatement ps = con.prepareStatement("""
-                    UPDATE scoreboard
-                    SET score = 10
-                    WHERE user_id = (SELECT id FROM users WHERE username = ?)
-                    """)) {
-                ps.setString(1, "bob");
-                ps.executeUpdate();
-            }
+            dsl.update(SCOREBOARD)
+                    .set(SCOREBOARD.SCORE, 10)
+                    .where(SCOREBOARD.USER_ID.eq(
+                            dsl.select(USERS.ID)
+                                    .from(USERS)
+                                    .where(USERS.USERNAME.eq("bob"))
+                    ))
+                    .execute();
 
             // carol = 3 Punkte
-            try (PreparedStatement ps = con.prepareStatement("""
-                    UPDATE scoreboard
-                    SET score = 3
-                    WHERE user_id = (SELECT id FROM users WHERE username = ?)
-                    """)) {
-                ps.setString(1, "carol");
-                ps.executeUpdate();
-            }
-            List<ScoreEntry> scoreboard = ScoreboardRepository.printScoreboard();
+            dsl.update(SCOREBOARD)
+                    .set(SCOREBOARD.SCORE, 3)
+                    .where(SCOREBOARD.USER_ID.eq(
+                            dsl.select(USERS.ID)
+                                    .from(USERS)
+                                    .where(USERS.USERNAME.eq("carol"))
+                    ))
+                    .execute();
 
-            // Assert: Größe + Sortierung + Werte prüfen
-            assertEquals(3, scoreboard.size(), "Es müssen 3 Einträge im Scoreboard sein");
+            List<ScoreEntry> scoreboard = scoreboardRepo.printScoreboard();
+
+            assertEquals(3, scoreboard.size());
 
             assertEquals("bob", scoreboard.get(0).username());
             assertEquals(10, scoreboard.get(0).score());
@@ -77,20 +88,9 @@ class ScoreboardRepositoryTest {
 
             assertEquals("alice", scoreboard.get(2).username());
             assertEquals(0, scoreboard.get(2).score());
-        }
-    }
 
-    @AfterEach
-    void tearDown() {
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-            stmt.execute("DELETE FROM scoreboard");
-
-            stmt.execute("DELETE FROM users");
-
-        } catch (SQLException e) {
-            fail("Cleanup fehlgeschlagen: " + e.getMessage());
+        } catch (Exception e) {
+            fail("Test fehlgeschlagen: " + e.getMessage());
         }
     }
 }

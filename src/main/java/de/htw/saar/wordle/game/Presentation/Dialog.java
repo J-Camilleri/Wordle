@@ -4,6 +4,8 @@ import de.htw.saar.wordle.game.*;
 import de.htw.saar.wordle.game.Database.GameRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
 import de.htw.saar.wordle.game.LoginSystem.AuthenticationService;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -30,14 +32,15 @@ public class Dialog extends UserInterface implements GameUI {
     private boolean running = true;
     private Wordle currentGame;
     private User loggedInUser;
-
     UserRepository userRepository = new UserRepository();
-    AuthenticationService auth = new AuthenticationService(userRepository);
     GameRepository gameRepo = new GameRepository();
+    AuthenticationService auth = new AuthenticationService(userRepository);
+
 
     public Dialog() {
         input = new Scanner(System.in);
         currentGame = null;
+
     }
 
     public void start() {

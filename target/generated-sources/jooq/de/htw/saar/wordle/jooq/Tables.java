@@ -4,6 +4,7 @@
 package de.htw.saar.wordle.jooq;
 
 
+import de.htw.saar.wordle.jooq.tables.DailyWords;
 import de.htw.saar.wordle.jooq.tables.Games;
 import de.htw.saar.wordle.jooq.tables.PracticeWords;
 import de.htw.saar.wordle.jooq.tables.Scoreboard;
@@ -16,6 +17,11 @@ import de.htw.saar.wordle.jooq.tables.Words;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
+
+    /**
+     * The table <code>daily_words</code>.
+     */
+    public static final DailyWords DAILY_WORDS = DailyWords.DAILY_WORDS;
 
     /**
      * The table <code>games</code>.

@@ -17,7 +17,7 @@ class DailyWordleRepositoryTest {
     public static final String TEST_DB = "wordle_test.db";
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         DatabaseManager.setDbName(TEST_DB);
 
 
@@ -26,37 +26,9 @@ class DailyWordleRepositoryTest {
             dbFile.delete();
         }
 
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-            String sql1 = "CREATE TABLE IF NOT EXISTS words (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "word_text TEXT NOT NULL UNIQUE," +
-                    "language_code TEXT DEFAULT 'de'," +
-                    "is_active INTEGER DEFAULT 1" +
-                    ");";
-
-            String sql2 = "CREATE TABLE IF NOT EXISTS practice_words (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "word_text TEXT NOT NULL UNIQUE," +
-                    "language_code TEXT DEFAULT 'de'," +
-                    "is_active INTEGER DEFAULT 1" +
-                    ");";
-
-            String sql3 = "CREATE TABLE IF NOT EXISTS daily_words (" +
-                    "word_date TEXT PRIMARY KEY," +
-                    "word_id INTEGER NOT NULL," +
-                    "FOREIGN KEY (word_id) REFERENCES words(id)" +
-                    ");";
-
-
-            stmt.execute(sql1);
-            stmt.execute(sql2);
-            stmt.execute(sql3);
-            DailyWordleRepository.createDailyTable();
-
-
-        } catch (SQLException e) {
+        try{
+            DatabaseManager.dbInit();
+        } catch (Exception e) {
             fail("Setup fehlgeschlagen: " + e.getMessage());
         }
 
@@ -88,22 +60,5 @@ class DailyWordleRepositoryTest {
         String word = dw.getRandomWord();
 
         assertEquals(word.toUpperCase(), word, "getRandomWord() sollte Uppercase zurückgeben");
-    }
-
-
-    @AfterEach
-    void tearDown() {
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-            stmt.execute("DELETE FROM daily_words");
-
-            stmt.execute("DELETE FROM words");
-            stmt.execute("DELETE FROM practice_words");
-
-
-        } catch (SQLException e) {
-            fail("Cleanup fehlgeschlagen: " + e.getMessage());
-        }
     }
 }

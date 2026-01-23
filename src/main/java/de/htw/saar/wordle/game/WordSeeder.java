@@ -1,75 +1,105 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.jooq.tables.Words;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
+
 import java.io.InputStreamReader;
 import java.sql.*;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets; //damit auf allen System kompatibel (Windows, Linux,..)
+import java.util.ArrayList;
+import java.util.List;
+
+import static de.htw.saar.wordle.jooq.tables.PracticeWords.PRACTICE_WORDS;
+import static de.htw.saar.wordle.jooq.tables.Words.WORDS;
 
 
 public class WordSeeder {
 
-    public static void fillIfEmpty() {
-        try (Connection c = DatabaseManager.connect()) {
 
-            if (isEmpty(c, "words")) {
-                importFile(c, "words", "words.txt");
-            }
-            if (isEmpty(c, "practice_words")) {
-                importFile(c, "practice_words", "words.txt");
-            }
+    public static void createWordTables() {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) throw new RuntimeException("Keine Verbindung zur DB");
+
+            DSLContext dsl = DSL.using(conn);
+
+            dsl.execute("""
+                CREATE TABLE IF NOT EXISTS words (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    word_text TEXT NOT NULL UNIQUE,
+                    language_code TEXT DEFAULT 'de',
+                    is_active INTEGER DEFAULT 1
+                )
+            """);
+
+            dsl.execute("""
+                CREATE TABLE IF NOT EXISTS practice_words (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    word_text TEXT NOT NULL UNIQUE,
+                    language_code TEXT DEFAULT 'de',
+                    is_active INTEGER DEFAULT 1
+                )
+            """);
+
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Fehler beim Erstellen der Tabellen: " + e.getMessage());
         }
     }
 
-    public static boolean isEmpty(Connection c, String table) throws Exception {
-        String sql = "SELECT COUNT(*) FROM " + table;
+    public static void fillIfEmpty() {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) throw new RuntimeException("Keine Verbindung zur DB");
 
-        try (Statement st = c.createStatement();
-        ResultSet rs = st.executeQuery(sql)) {
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
-            rs.next();
-            return rs.getInt(1) == 0; //wenn 1. Spalte leer dann true
+            if (isEmpty(dsl, WORDS)) {
+                importFile(dsl, WORDS, "words.txt");
+            }
+
+
+            if (isEmpty(dsl, PRACTICE_WORDS)) {
+                importFile(dsl, PRACTICE_WORDS, "words.txt");
+            }
+
+        } catch (Exception e) {
+            System.out.println("Fehler beim Seed: " + e.getMessage());
         }
     }
 
-    public static void importFile(Connection c, String table, String dateiPath) throws Exception {
-        String sql = "INSERT OR IGNORE INTO " + table + " (word_text) VALUES (?)";
+    public static boolean isEmpty(DSLContext dsl, org.jooq.Table<?> table) {
+        int count = dsl.fetchCount(table);
+        return count == 0;
+    }
 
-        boolean oldAutoCommit = c.getAutoCommit(); //vorheriger Zustand speichern
-        c.setAutoCommit(false); //erst Speichern bei commit
-
-        InputStream in = WordSeeder.class.
-                getClassLoader().
-                getResourceAsStream(dateiPath);
-
+    /** Importiert Wörter aus einer Datei in die angegebene Tabelle */
+    public static void importFile(DSLContext dsl, org.jooq.Table<?> table, String dateiPath) throws Exception {
+        InputStream in = WordSeeder.class.getClassLoader().getResourceAsStream(dateiPath);
         if (in == null) {
             throw new RuntimeException("Datei nicht gefunden: " + dateiPath);
         }
 
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(in, StandardCharsets.UTF_8)
-        );
-             PreparedStatement ps = c.prepareStatement(sql)
-        ) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            List<String> words = new ArrayList<>();
             String line;
-            int count = 0;
             while ((line = br.readLine()) != null) {
-                String w = line.trim().toUpperCase();
-                ps.setString(1, w);
-                ps.addBatch();
-                count++;
+                words.add(line.trim().toUpperCase());
             }
-            ps.executeBatch();
-            c.commit();
-            System.out.println("Importiert in " + table + ": " + count + " Wörter");
 
-        } catch (Exception e) {
-            c.rollback();
-            throw e;
-        } finally {
-            c.setAutoCommit(oldAutoCommit);
+
+            dsl.transaction(cfg -> {
+                DSLContext tx = org.jooq.impl.DSL.using(cfg);
+                for (String w : words) {
+                    tx.insertInto(table)
+                            .columns(table.field("word_text", String.class))
+                            .values(w)
+                            .onDuplicateKeyIgnore()
+                            .execute();
+                }
+            });
+
+            System.out.println("Importiert in " + table.getName() + ": " + words.size() + " Wörter");
         }
     }
 }

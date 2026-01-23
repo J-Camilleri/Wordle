@@ -6,6 +6,7 @@ package de.htw.saar.wordle.jooq.tables;
 
 import de.htw.saar.wordle.jooq.DefaultSchema;
 import de.htw.saar.wordle.jooq.Keys;
+import de.htw.saar.wordle.jooq.tables.Games.GamesPath;
 import de.htw.saar.wordle.jooq.tables.Scoreboard.ScoreboardPath;
 import de.htw.saar.wordle.jooq.tables.records.UsersRecord;
 
@@ -152,6 +153,18 @@ public class Users extends TableImpl<UsersRecord> {
     @Override
     public List<UniqueKey<UsersRecord>> getUniqueKeys() {
         return Arrays.asList(Keys.USERS__UK_USERS_3307420);
+    }
+
+    private transient GamesPath _games;
+
+    /**
+     * Get the implicit to-many join path to the <code>games</code> table
+     */
+    public GamesPath games() {
+        if (_games == null)
+            _games = new GamesPath(this, null, Keys.GAMES__FK_GAMES_PK_USERS.getInverseKey());
+
+        return _games;
     }
 
     private transient ScoreboardPath _scoreboard;

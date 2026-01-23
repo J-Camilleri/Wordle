@@ -1,26 +1,33 @@
 package de.htw.saar.wordle.game;
+import org.jooq.DSLContext;
+import org.jooq.Record2;
+
 import java.time.LocalDate;
 import java.sql.*;
 
+import static de.htw.saar.wordle.jooq.tables.DailyWords.DAILY_WORDS;
+import static de.htw.saar.wordle.jooq.tables.Words.WORDS;
 
 
 public class DailyWordleRepository implements WordProvider {
 
 
     public static void createDailyTable() {
-        String dailyTable = """
-                CREATE TABLE IF NOT EXISTS daily_words (
-                    word_date TEXT PRIMARY KEY,
-                    word_id INTEGER NOT NULL,
-                    FOREIGN KEY (word_id) REFERENCES words(id)
-                )
-                """;
+        String dailyTableSQL = """
+            CREATE TABLE IF NOT EXISTS daily_words (
+                word_date TEXT PRIMARY KEY,
+                word_id INTEGER NOT NULL,
+                FOREIGN KEY (word_id) REFERENCES words(id)
+            )
+        """;
 
-        try (Connection con = DatabaseManager.connect();
-             Statement st = con.createStatement()) {
-            st.execute(dailyTable);
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn != null) {
+                DSLContext dsl = org.jooq.impl.DSL.using(conn);
+                dsl.execute(dailyTableSQL);
+            }
+        } catch (Exception e) {
+            System.out.println("Fehler beim Erstellen der daily_words-Tabelle: " + e.getMessage());
         }
     }
 
@@ -29,76 +36,88 @@ public class DailyWordleRepository implements WordProvider {
 //        return LocalDate.now().toString();
 //    }
 
-    public static Word checkExistingWords(String date) throws SQLException {
-        String existingDailyWord = """
-                SELECT w.id,w.word_text
-                FROM daily_words dw
-                JOIN words w ON w.id = dw.word_id
-                WHERE dw.word_date = ?
-        """;
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(existingDailyWord)) {
+    public static Word checkExistingWords(String date) {
+        try (var conn = DatabaseManager.connect()) {
+            if (conn == null) return null;
 
-            ps.setString(1, date);
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    int id = rs.getInt("id");
-                    String wordText = rs.getString("word_text");
-                    return new Word(id, wordText);
-                }
-                return null;
+            Record2<Integer, String> record = dsl
+                    .select(WORDS.ID, WORDS.WORD_TEXT)
+                    .from(DAILY_WORDS)
+                    .join(WORDS).on(DAILY_WORDS.WORD_ID.eq(WORDS.ID))
+                    .where(DAILY_WORDS.WORD_DATE.eq(date))
+                    .fetchOne();
+
+            if (record != null) {
+                return new Word(record.get(WORDS.ID), record.get(WORDS.WORD_TEXT));
             }
+            return null;
+
+        } catch (Exception e) {
+            System.out.println("Fehler beim Prüfen der DailyWord: " + e.getMessage());
+            return null;
         }
     }
 
     private Word getRandomWordFromDB() throws SQLException {
-        String sql = """
-                SELECT id, word_text
-                FROM words
-                WHERE is_active = 1
-                ORDER BY id
-                LIMIT 1
-                OFFSET ((strftime('%s','now') / 86400) % (SELECT COUNT(*) FROM Words))
-                """;
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) throw new SQLException("Keine Verbindung zur DB");
 
-        try (Connection con = DatabaseManager.connect();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
-            if (rs.next()) {
-                int id = rs.getInt("id");
-                String wordText = rs.getString("word_text");
-                return new Word(id, wordText);
+
+            int count = dsl.fetchCount(WORDS, WORDS.IS_ACTIVE.eq(1));
+            if (count == 0) throw new IllegalStateException("Keine aktiven Wörter vorhanden.");
+
+
+            int offset = (int) ((System.currentTimeMillis() / 1000 / 86400) % count);
+
+            Record2<Integer, String> record = dsl.select(WORDS.ID, WORDS.WORD_TEXT)
+                    .from(WORDS)
+                    .where(WORDS.IS_ACTIVE.eq(1))
+                    .orderBy(WORDS.ID)
+                    .limit(1)
+                    .offset(offset)
+                    .fetchOne();
+
+            if (record != null) {
+                return new Word(record.get(WORDS.ID), record.get(WORDS.WORD_TEXT));
+            } else {
+                throw new IllegalStateException("Keine aktiven Wörter gefunden.");
             }
-            throw new IllegalStateException("Keine aktiven Wörter vorhanden.");
         }
     }
 
-    public  Word chooseRandomDailyWord() throws SQLException {
-        DailyWordleRepository random = new DailyWordleRepository();
+    public Word chooseRandomDailyWord() throws SQLException {
         String today = LocalDate.now().toString();
 
-        Word existing = checkExistingWords(today);
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) throw new SQLException("Keine Verbindung zur DB");
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
-        if (existing != null) {
-            return existing;
+
+            var record = dsl.select(WORDS.ID, WORDS.WORD_TEXT)
+                    .from(DAILY_WORDS)
+                    .join(WORDS).on(DAILY_WORDS.WORD_ID.eq(WORDS.ID))
+                    .where(DAILY_WORDS.WORD_DATE.eq(today))
+                    .fetchOne();
+
+            if (record != null) {
+                return new Word(record.get(WORDS.ID), record.get(WORDS.WORD_TEXT));
+            }
+
+
+            Word randomWord = getRandomWordFromDB();
+
+
+            dsl.insertInto(DAILY_WORDS)
+                    .columns(DAILY_WORDS.WORD_DATE, DAILY_WORDS.WORD_ID)
+                    .values(today, randomWord.id())
+                    .execute();
+
+            return randomWord;
         }
-
-        Word randomWord = random.getRandomWordFromDB();
-        String insert = """
-                INSERT INTO daily_words (word_date, word_id) VALUES (?, ?)""";
-
-
-        try (Connection con = DatabaseManager.connect();
-             PreparedStatement ps = con.prepareStatement(insert)) {
-            ps.setString(1, today);
-            ps.setInt(2, randomWord.id());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw e;
-        }
-        return randomWord;
     }
 
     @Override

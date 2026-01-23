@@ -73,18 +73,4 @@ class DatabaseManagerTest {
 
         assertFalse(result, "Der zweite User mit gleichem Namen sollte abgelehnt werden");
     }
-
-    @AfterEach
-    void tearDown() {
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-            stmt.execute("DELETE FROM scoreboard");
-
-            stmt.execute("DELETE FROM users");
-
-        } catch (SQLException e) {
-            fail("Cleanup fehlgeschlagen: " + e.getMessage());
-        }
-    }
 }
