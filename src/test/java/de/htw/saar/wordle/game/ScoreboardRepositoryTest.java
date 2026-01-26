@@ -4,15 +4,11 @@ import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 import static de.htw.saar.wordle.jooq.tables.Scoreboard.SCOREBOARD;

@@ -2,17 +2,13 @@ package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
 import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,9 +38,11 @@ class GameRepositoryTest {
                 if (conn == null) fail("Keine Verbindung zur DB");
                 DSLContext dsl = DSL.using(conn);
 
+                dsl.execute("PRAGMA foreign_keys = OFF");
                 dsl.deleteFrom(GAMES).execute();
-                dsl.deleteFrom(USERS).execute();
                 dsl.deleteFrom(WORDS).execute();
+                dsl.deleteFrom(USERS).execute();
+                dsl.execute("PRAGMA foreign_keys = ON");
 
                 dsl.insertInto(USERS)
                         .columns(USERS.USERNAME, USERS.PASSWORD_HASH)

@@ -1,6 +1,5 @@
 package de.htw.saar.wordle.game;
 
-import de.htw.saar.wordle.jooq.tables.PracticeWords;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;

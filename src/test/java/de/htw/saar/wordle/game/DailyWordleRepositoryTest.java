@@ -1,6 +1,9 @@
 package de.htw.saar.wordle.game;
 
 import java.time.LocalDate;
+
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 
+import static de.htw.saar.wordle.jooq.tables.DailyWords.DAILY_WORDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DailyWordleRepositoryTest {
@@ -33,6 +36,18 @@ class DailyWordleRepositoryTest {
         }
 
         WordSeeder.fillIfEmpty();
+    }
+
+    @AfterEach
+    void tearDown() {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn != null) {
+                DSLContext dsl = DSL.using(conn);
+                dsl.deleteFrom(DAILY_WORDS).execute();
+            }
+        } catch (Exception e) {
+            fail("Cleanup fehlgeschlagen: " + e.getMessage());
+        }
     }
 
 
