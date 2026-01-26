@@ -5,9 +5,6 @@ import de.htw.saar.wordle.game.LoginSystem.AuthenticationService;
 import org.junit.jupiter.api.*;
 
 import java.io.File;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.*;
 

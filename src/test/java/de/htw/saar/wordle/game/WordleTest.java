@@ -3,8 +3,6 @@ package de.htw.saar.wordle.game;
 import de.htw.saar.wordle.game.Presentation.Dialog;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 
