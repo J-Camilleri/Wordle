@@ -93,6 +93,11 @@ public class Games extends TableImpl<GamesRecord> {
      */
     public final TableField<GamesRecord, String> DIFFICULTY = createField(DSL.name("difficulty"), SQLDataType.CLOB.nullable(false), this, "");
 
+    /**
+     * The column <code>games.date</code>.
+     */
+    public final TableField<GamesRecord, String> DATE = createField(DSL.name("date"), SQLDataType.CLOB, this, "");
+
     private Games(Name alias, Table<GamesRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

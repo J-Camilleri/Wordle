@@ -21,8 +21,7 @@ public class ScoreboardRepository {
                 );
                 """;
 
-        try {
-            Connection conn = DatabaseManager.connect();
+        try(Connection conn = DatabaseManager.connect()) {
             if (conn == null) {
                 System.out.println("Fehler: Verbindung zur Datenbank konnte nicht hergestellt werden.");
                 return;

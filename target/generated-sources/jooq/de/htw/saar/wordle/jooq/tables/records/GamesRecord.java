@@ -116,6 +116,20 @@ public class GamesRecord extends UpdatableRecordImpl<GamesRecord> {
         return (String) get(6);
     }
 
+    /**
+     * Setter for <code>games.date</code>.
+     */
+    public void setDate(String value) {
+        set(7, value);
+    }
+
+    /**
+     * Getter for <code>games.date</code>.
+     */
+    public String getDate() {
+        return (String) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -139,7 +153,7 @@ public class GamesRecord extends UpdatableRecordImpl<GamesRecord> {
     /**
      * Create a detached, initialised GamesRecord
      */
-    public GamesRecord(Integer id, Integer userId, Integer wordId, Integer attemptsCount, Integer isWon, String guesses, String difficulty) {
+    public GamesRecord(Integer id, Integer userId, Integer wordId, Integer attemptsCount, Integer isWon, String guesses, String difficulty, String date) {
         super(Games.GAMES);
 
         setId(id);
@@ -149,6 +163,7 @@ public class GamesRecord extends UpdatableRecordImpl<GamesRecord> {
         setIsWon(isWon);
         setGuesses(guesses);
         setDifficulty(difficulty);
+        setDate(date);
         resetChangedOnNotNull();
     }
 }

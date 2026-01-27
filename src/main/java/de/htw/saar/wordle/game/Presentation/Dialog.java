@@ -4,8 +4,6 @@ import de.htw.saar.wordle.game.*;
 import de.htw.saar.wordle.game.Database.GameRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
 import de.htw.saar.wordle.game.LoginSystem.AuthenticationService;
-import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
 
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -44,6 +42,7 @@ public class Dialog extends UserInterface implements GameUI {
     }
 
     public void start() {
+        DatabaseManager.dbInit();
         while (running) {
             switch (state) {
                 case LOGIN_MENU -> showLoginMenu();
@@ -140,9 +139,7 @@ public class Dialog extends UserInterface implements GameUI {
             loggedInUser = user;
             System.out.println("Login Erfolgreich");
             state = State.MAIN_MENU;
-        }, () -> {
-            System.out.println("Benutzername oder Passwort falsch");
-        });
+        }, () -> System.out.println("Benutzername oder Passwort falsch"));
     }
 
     private void handleRegister() {
@@ -175,9 +172,24 @@ public class Dialog extends UserInterface implements GameUI {
 
     private void handleDailyWordle() {
         WordSeeder.fillIfEmpty();
-        DailyWordleRepository.createDailyTable();
-        DailyWordle dw = new DailyWordle(new DailyWordleRepository(), GameConfig.createThroughDifficulty(Difficulty.NORMAL),loggedInUser,gameRepo);
-        dw.gameLoop();
+        if(gameRepo.isUserGameFinished(loggedInUser.id())) {
+            System.out.println("Du hast heute schon dein Daily Wordle gespielt komm morgen wieder zurück!");
+            state = State.EXIT;
+            return;
+        }
+
+        DailyWordle game = gameRepo
+                .loadGame(loggedInUser.id(), loggedInUser)
+                .orElseGet(() ->
+                        new DailyWordle(
+                                new DailyWordleRepository(),
+                                GameConfig.createThroughDifficulty(Difficulty.NORMAL),
+                                loggedInUser,
+                                gameRepo
+                        )
+                );
+        game.gameLoop();
+        state = State.EXIT;
     }
 
     @Override

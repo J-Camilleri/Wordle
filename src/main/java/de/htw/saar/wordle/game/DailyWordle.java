@@ -2,6 +2,7 @@ package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
 import de.htw.saar.wordle.game.Presentation.Dialog;
+import java.util.List;
 
 public class DailyWordle extends Wordle {
 
@@ -15,6 +16,12 @@ public class DailyWordle extends Wordle {
         this.gameRepository = gameRepo;
     }
 
+    public DailyWordle(WordProvider provider, GameConfig config, User user, GameRepository gameRepo, int gameId, String targetWord, List<String> guesses) {
+        super(config, gameId, targetWord, guesses);
+        this.user = user;
+        this.gameRepository = gameRepo;
+    }
+
     public void gameLoop() {
         while (!gameWon() && !gameLost()) {
             checkWord();
@@ -23,8 +30,10 @@ public class DailyWordle extends Wordle {
 
         if (gameWon()) {
             ui.gameWon("Du hast Gewonnen! Hurra!");
+            gameRepository.finishGame(user.id(), true);
         } else {
             ui.gameLost("Keine Versuche mehr übrig. Du hast Verloren!");
+            gameRepository.finishGame(user.id(), false);
         }
     }
 }
