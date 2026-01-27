@@ -1,6 +1,7 @@
 package de.htw.saar.wordle.game;
 import org.jooq.DSLContext;
 import org.jooq.Record2;
+import org.jooq.impl.DSL;
 
 import java.time.LocalDate;
 import java.sql.*;
@@ -76,9 +77,8 @@ public class DailyWordleRepository implements WordProvider {
             Record2<Integer, String> record = dsl.select(WORDS.ID, WORDS.WORD_TEXT)
                     .from(WORDS)
                     .where(WORDS.IS_ACTIVE.eq(1))
-                    .orderBy(WORDS.ID)
+                    .orderBy(DSL.rand())
                     .limit(1)
-                    .offset(offset)
                     .fetchOne();
 
             if (record != null) {

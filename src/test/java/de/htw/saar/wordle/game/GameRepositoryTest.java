@@ -22,6 +22,7 @@ class GameRepositoryTest {
     private static final String TEST_DB = "wordle_test.db";
     private GameRepository gameRepository;
     private int testUserId;
+    private User testUser;
 
     @BeforeAll
     static void setupClass() {
@@ -53,6 +54,8 @@ class GameRepositoryTest {
                         .from(USERS)
                         .where(USERS.USERNAME.eq("Tester"))
                         .fetchOne(USERS.ID);
+
+                testUser = new User(testUserId, "Tester", "hash123");
 
                 dsl.insertInto(WORDS)
                         .columns(WORDS.WORD_TEXT)
@@ -89,7 +92,7 @@ class GameRepositoryTest {
         boolean saved = gameRepository.saveGame(testUserId, game);
         assertTrue(saved, "Spiel sollte erfolgreich gespeichert werden");
 
-        Optional<Wordle> loadedGameOpt = gameRepository.loadGame(testUserId);
+        Optional<DailyWordle> loadedGameOpt = gameRepository.loadGame(testUserId, testUser);
         assertTrue(loadedGameOpt.isPresent(), "Gespeichertes Spiel sollte gefunden werden");
 
         Wordle loadedGame = loadedGameOpt.get();
@@ -107,7 +110,7 @@ class GameRepositoryTest {
 
         gameRepository.finishGame(testUserId, true);
 
-        Optional<Wordle> loadedGame = gameRepository.loadGame(testUserId);
+        Optional<DailyWordle> loadedGame = gameRepository.loadGame(testUserId, testUser);
         assertTrue(loadedGame.isEmpty(), "Beendetes Spiel darf nicht mehr als aktives Spiel geladen werden");
     }
 
@@ -121,7 +124,7 @@ class GameRepositoryTest {
         boolean updated = gameRepository.saveGame(testUserId, game);
         assertTrue(updated);
 
-        Wordle loaded = gameRepository.loadGame(testUserId).get();
+        DailyWordle loaded = gameRepository.loadGame(testUserId, testUser).get();
         assertEquals(2, loaded.getAttempt());
         assertEquals("RATET", loaded.getGuessedWords().get(0));
         assertEquals("TIERE", loaded.getGuessedWords().get(1));

@@ -6,6 +6,7 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
 import java.sql.Connection;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +54,7 @@ public class GameRepository {
             record.setGuesses(String.join(",", game.getGuessedWords()));
             record.setDifficulty(game.getConfig().getDifficulty().name());
             record.setIsWon(STATUS_ACTIVE);
+            record.setDate(LocalDate.now().toString());
 
             record.store();
             return true;
@@ -63,7 +65,7 @@ public class GameRepository {
     }
 
 
-    public Optional<Wordle> loadGame(int userId) {
+    public Optional<DailyWordle> loadGame(int userId, User user) {
 
         try (Connection conn = DatabaseManager.connect()) {
             if (conn == null) return Optional.empty();
@@ -80,6 +82,7 @@ public class GameRepository {
                     .from(GAMES)
                     .join(WORDS).on(GAMES.WORD_ID.eq(WORDS.ID))
                     .where(GAMES.USER_ID.eq(userId))
+                    .and(GAMES.DATE.eq(LocalDate.now().toString()))
                     .and(GAMES.IS_WON.eq(STATUS_ACTIVE))
                     .fetchOptional(record -> {
 
@@ -98,12 +101,43 @@ public class GameRepository {
                             guesses.addAll(Arrays.asList(guessesStr.split(",")));
                         }
 
-                        return new Wordle(config, gameId, targetWord, guesses);
+                        return new DailyWordle(new DailyWordleRepository(), config, user, this, gameId, targetWord, guesses);
                     });
         }catch (Exception e){
             System.out.println("Fehler beim Laden des Spiels: " + e.getMessage());
             return Optional.empty();
         }
+    }
+
+    private int getUserGameStatus(int userId) {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return -1;
+
+            DSLContext dsl = DSL.using(conn);
+
+            Integer status = dsl
+                    .select(GAMES.IS_WON)
+                    .from(GAMES)
+                    .where(GAMES.USER_ID.eq(userId))
+                    .and(GAMES.DATE.eq(LocalDate.now().toString()))
+                    .limit(1)
+                    .fetchOne(GAMES.IS_WON);
+
+            return status != null ? status : -1;
+
+        } catch (Exception e) {
+            System.out.println("Fehler beim Laden des Spielstatus: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    public boolean hasUserActiveGame(int userId) {
+        return getUserGameStatus(userId) == STATUS_ACTIVE;
+    }
+
+    public boolean isUserGameFinished(int userId) {
+        int status = getUserGameStatus(userId);
+        return status == STATUS_LOST || status == STATUS_WON;
     }
 
     public void finishGame(int userId, boolean won) {
@@ -133,12 +167,13 @@ public class GameRepository {
             is_won INTEGER,
             guesses TEXT,
             difficulty TEXT,
+            date TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id),
             FOREIGN KEY(word_id) REFERENCES words(id)
         );
     """;
 
-        try (var conn = DatabaseManager.connect()) {
+        try (Connection conn = DatabaseManager.connect()) {
             if (conn == null) throw new RuntimeException("Keine Verbindung zur DB");
             DSLContext dsl = DSL.using(conn);
             dsl.execute(sql);
