@@ -70,6 +70,32 @@ public class ScoreboardRepository {
         return result;
     }
 
+    public static void updateScore(int userId, int points) {
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn == null) return;
+            DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
+            boolean exists = dsl.fetchExists(
+                    dsl.selectFrom(SCOREBOARD)
+                            .where(SCOREBOARD.USER_ID.eq(userId))
+            );
+
+            if (exists) {
+                dsl.update(SCOREBOARD)
+                        .set(SCOREBOARD.SCORE, SCOREBOARD.SCORE.plus(points))
+                        .where(SCOREBOARD.USER_ID.eq(userId))
+                        .execute();
+            } else {
+                dsl.insertInto(SCOREBOARD, SCOREBOARD.USER_ID, SCOREBOARD.SCORE)
+                        .values(userId, points)
+                        .execute();
+            }
+            System.out.println("Punkte (" + points + ") wurden im Scoreboard gespeichert.");
+
+        } catch (Exception e) {
+            System.out.println("Fehler beim Aktualisieren des Scoreboards: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
 }

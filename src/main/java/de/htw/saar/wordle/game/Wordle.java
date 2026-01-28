@@ -1,6 +1,7 @@
 package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
+import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Presentation.Dialog;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Languages;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 public class Wordle {
 
     private int gameId;
+    private int userId = -1;
     private GameRepository gameRepo;
     private Dialog ui = new Dialog();
     private final GameConfig config;
@@ -29,11 +31,13 @@ public class Wordle {
     private final JLanguageTool TOOL;
     private WordProvider provider;
 
-
-
-    // Konstruktor um neues Game zu erstellen
     public Wordle(WordProvider provider, GameConfig config) {
-        this.gameId = -1; // Damit der Compiler die Schniss hält, weil noch keine DB-id vorhanden
+        this(provider, config, -1);
+    }
+
+    public Wordle(WordProvider provider, GameConfig config, int userId) {
+        this.gameId = -1;
+        this.userId = userId;
         this.config = config;
         this.provider = provider;
         this.wordleWord = provider.getRandomWord();
@@ -41,9 +45,13 @@ public class Wordle {
         this.TOOL = createTool(config.getLanguage());
     }
 
-    // Konstruktor um Game aus der DB zu laden
     public Wordle(GameConfig config, int gameId, String targetWord, List<String> guesses) {
+        this(config, gameId, targetWord, guesses, -1);
+    }
+
+    public Wordle(GameConfig config, int gameId, String targetWord, List<String> guesses, int userId) {
         this.gameId = gameId;
+        this.userId = userId;
         this.config = config;
         this.provider = null;
         this.wordleWord = targetWord;
@@ -88,7 +96,6 @@ public class Wordle {
         checkWord(userInput);
     }
 
-    //TODO Möglicherweise die einzelnen For-Schleifen als einzelne Methoden machen für bessere Lesbarkeit
     public void checkWord(String userInput) {
         int length = config.getWordlength();
         boolean[] used = new boolean[length];
@@ -97,26 +104,24 @@ public class Wordle {
             return;
         }
 
-            for (int i = 0; i < length; i++) {
-                if (userInput.charAt(i) == wordleWord.charAt(i)) {
-                    board[attempt][i] = new Grid(userInput.charAt(i), LetterStatus.CORRECT);
-                    used[i] = true;
+        for (int i = 0; i < length; i++) {
+            if (userInput.charAt(i) == wordleWord.charAt(i)) {
+                board[attempt][i] = new Grid(userInput.charAt(i), LetterStatus.CORRECT);
+                used[i] = true;
+            }
+        }
+
+        for(int i = 0; i < length; i++){
+            if(board[attempt][i] != null) continue;
+
+            for (int j = 0; j < length; j++) {
+                if (!used[j] && userInput.charAt(i) == wordleWord.charAt(j)) {
+                    board[attempt][i] = new Grid(userInput.charAt(i), LetterStatus.PRESENT);
+                    used[j] = true;
+                    break;
                 }
             }
-
-
-            for(int i = 0; i < length; i++){
-                if(board[attempt][i] != null) continue;
-
-                for (int j = 0; j < length; j++) {
-                    if (!used[j] && userInput.charAt(i) == wordleWord.charAt(j)) {
-
-                        board[attempt][i] = new Grid(userInput.charAt(i), LetterStatus.PRESENT);
-                        used[j] = true;
-                        break;
-                    }
-                }
-            }
+        }
 
         for (int i = 0; i < length; i++) {
             if (board[attempt][i] == null) {
@@ -124,13 +129,10 @@ public class Wordle {
             }
         }
 
-            attempt++;
-
-            printBoard();
-
+        attempt++;
+        printBoard();
     }
 
-    //TODO Keine Ahnung ob diese Methode in Wordle kommt oder in Dialog (tendiere aber zu Wordle)
     public void printBoard() {
         for (int r = 0; r < attempt; r++) {
             for (int c = 0; c < board[r].length; c++) {
@@ -149,26 +151,20 @@ public class Wordle {
 
 
     public boolean wordExists(String userInput)  {
-        //TODO die System out prints in Dialog einbringen (Hier nur zum Debuggen genutzt)
-
         try{
             if (userInput.isEmpty() || userInput.contains(" ")) {
-                //System.out.println("Das Wort darf nicht leer sein oder leerzeichen enthalten.");
+                System.out.println("Das Wort darf nicht leer sein oder leerzeichen enthalten.");
                 return false;
             }
-
             if (!userInput.matches("^[a-zA-Z]+$")) {
-                //System.out.println("Das Wort darf nur Buchstaben von a-z beinhalten.");
+                System.out.println("Das Wort darf nur Buchstaben von a-z beinhalten.");
                 return false;
             }
-
             if (userInput.length() != config.getWordlength()) {
-                //System.out.println("Das Wort muss aus 5 Buchstaben bestehen");
+                System.out.println("Das Wort muss aus 5 Buchstaben bestehen");
                 return false;
             }
-
             return TOOL.check(userInput).isEmpty();
-
         }catch(IOException e){
             System.out.println(e.getMessage());
             return false;
@@ -189,6 +185,13 @@ public class Wordle {
             }
         }
 
+        int points = calculatePoints();
+        System.out.println("Glückwunsch! Du hast " + points + " Punkte erreicht.");
+        // Punkte in DB eintragen
+        if (userId != -1) {
+            ScoreboardRepository.updateScore(userId, points);
+        }
+
         return true;
     }
 
@@ -196,9 +199,20 @@ public class Wordle {
         return !gameWon() && !hasAttemptsLeft();
     }
 
-
     public boolean hasAttemptsLeft() {
         return attempt < config.getMaxAttempts();
+    }
+
+    public int calculatePoints(){
+        return switch (attempt){
+            case 1 -> 10;
+            case 2 -> 5;
+            case 3 -> 4;
+            case 4 -> 3;
+            case 5 -> 2;
+            case 6 -> 1;
+            default -> 0;
+        };
     }
 
     public GameConfig getConfig() {
@@ -207,17 +221,13 @@ public class Wordle {
     public Grid[][] getBoard() {
         return board;
     }
-
     public String getWordleWord() {
         return wordleWord;
     }
-
     public int getAttempt() {
         return attempt;
     }
-
     public int getGameId() {
         return gameId;
     }
-
 }

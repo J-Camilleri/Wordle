@@ -11,13 +11,13 @@ public class DailyWordle extends Wordle {
     private Dialog ui =  new Dialog();
 
     public DailyWordle(WordProvider provider, GameConfig config, User user, GameRepository gameRepo) {
-        super(provider, config);
+        super(provider, config, user.id());
         this.user = user;
         this.gameRepository = gameRepo;
     }
 
     public DailyWordle(WordProvider provider, GameConfig config, User user, GameRepository gameRepo, int gameId, String targetWord, List<String> guesses) {
-        super(config, gameId, targetWord, guesses);
+        super(config, gameId, targetWord, guesses, user.id());
         this.user = user;
         this.gameRepository = gameRepo;
     }
@@ -27,7 +27,7 @@ public class DailyWordle extends Wordle {
             checkWord();
             gameRepository.saveGame(user.id(), this);
         }
-
+        //TODO brauchen wir die Methoden noch? die glückwünsche werden doch schon in der wordle rausgehauen zsm mit dem punkteverrechnen
         if (gameWon()) {
             ui.gameWon("Du hast Gewonnen! Hurra!");
             gameRepository.finishGame(user.id(), true);
