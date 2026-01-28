@@ -23,22 +23,53 @@ class ScoreboardRepositoryTest {
 
     @BeforeEach
     void setUp() {
-
         DatabaseManager.setDbName(TEST_DB);
-        File dbFile = new File(TEST_DB);
-        if (dbFile.exists()) {
-            dbFile.delete();
-        }
 
         try {
             DatabaseManager.dbInit();
         } catch (Exception e) {
-            fail("Setup fehlgeschlagen: " + e.getMessage());
+            fail("DB Init fehlgeschlagen: " + e.getMessage());
         }
+
+        try (Connection conn = DatabaseManager.connect()) {
+            if (conn != null) {
+                DSLContext dsl = DSL.using(conn);
+                dsl.deleteFrom(SCOREBOARD).execute();
+                dsl.deleteFrom(USERS).execute();
+            }
+        } catch (Exception e) {
+            fail("Konnte Tabellen nicht leeren: " + e.getMessage());
+        }
+
         userRepo = new UserRepository();
         scoreboardRepo = new ScoreboardRepository();
     }
 
+    @Test
+    void testUpdateScore() {
+        String username = "winnerwinnerchickendinner";
+        userRepo.save(username, "hash123");
+        int userId = userRepo.findByUsername(username).get().id();
+
+        ScoreboardRepository.updateScore(userId, 10);
+
+        List<ScoreEntry> scoresAfterFirstGame = ScoreboardRepository.printScoreboard();
+
+        ScoreEntry entry = scoresAfterFirstGame.stream()
+                .filter(e -> e.username().equals(username))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(10, entry.score(), "Punkte sollten nach dem ersten Spiel 10 sein");
+
+        ScoreboardRepository.updateScore(userId, 5);
+
+        List<ScoreEntry> scoresAfterSecondGame = ScoreboardRepository.printScoreboard();
+        ScoreEntry entry2 = scoresAfterSecondGame.stream()
+                .filter(e -> e.username().equals(username))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(15, entry2.score(), "Punkte sollen addiert werden (10 + 5 = 15)");
+    }
 
     @Test
     void printScoreboardTest() {
