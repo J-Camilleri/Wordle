@@ -90,8 +90,6 @@ public class ScoreboardRepository {
                         .values(userId, points)
                         .execute();
             }
-            System.out.println("Punkte (" + points + ") wurden im Scoreboard gespeichert.");
-
         } catch (Exception e) {
             System.out.println("Fehler beim Aktualisieren des Scoreboards: " + e.getMessage());
             e.printStackTrace();

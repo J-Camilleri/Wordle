@@ -1,7 +1,6 @@
 package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
-import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Presentation.Dialog;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Languages;
@@ -184,14 +183,6 @@ public class Wordle {
                 return false;
             }
         }
-
-        int points = calculatePoints();
-        System.out.println("Glückwunsch! Du hast " + points + " Punkte erreicht.");
-        // Punkte in DB eintragen
-        if (userId != -1) {
-            ScoreboardRepository.updateScore(userId, points);
-        }
-
         return true;
     }
 
@@ -226,6 +217,9 @@ public class Wordle {
     }
     public int getAttempt() {
         return attempt;
+    }
+    public int getUserId() {
+        return userId;
     }
     public int getGameId() {
         return gameId;
