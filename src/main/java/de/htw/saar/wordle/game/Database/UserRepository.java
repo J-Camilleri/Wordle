@@ -1,7 +1,7 @@
 package de.htw.saar.wordle.game.Database;
 
-import de.htw.saar.wordle.game.DatabaseManager;
-import de.htw.saar.wordle.game.User;
+import de.htw.saar.wordle.game.Exceptions.DataAccessException;
+import de.htw.saar.wordle.game.LoginSystem.User;
 import org.jooq.DSLContext;
 
 import java.sql.*;
@@ -12,7 +12,7 @@ import static de.htw.saar.wordle.jooq.tables.Users.USERS;
 
 public class UserRepository {
 
-    public static void createTable() throws SQLException {
+    public static void createTable() {
         String sql = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +26,7 @@ public class UserRepository {
                 conn.createStatement().execute(sql);
             }
         } catch (SQLException e) {
-            System.out.println("Fehler beim Erstellen der User-Tabelle: " + e.getMessage());
+            throw new DataAccessException("Fehler beim Erstellen der User-Tabelle: ", e);
         }
     }
 
@@ -56,13 +56,11 @@ public class UserRepository {
 
             } catch (Exception e) {
                 conn.rollback();
-                System.out.println("Fehler beim User-Anlegen: " + e.getMessage());
-                return false;
+                throw new DataAccessException("Fehler beim User anlegen ", e);
             }
 
         } catch (SQLException e) {
-            System.out.println("DB Fehler: " + e.getMessage());
-            return false;
+            throw new DataAccessException("Verbindung zur Datenbank konnte nicht erstellt werden ", e);
         }
     }
 
@@ -81,12 +79,9 @@ public class UserRepository {
                     ));
 
         } catch (Exception e) {
-            System.out.println("Fehler beim Finden des Users: " + e.getMessage());
-            return Optional.empty();
+            throw new DataAccessException("User konnte nicht gefunden werden", e);
         }
     }
-
-
 
     public boolean deleteByUsername(String username) {
         try (Connection conn = DatabaseManager.connect()) {
@@ -101,8 +96,7 @@ public class UserRepository {
             return deleted > 0;
 
         } catch (Exception e) {
-            System.out.println("Fehler beim Löschen des Users: " + e.getMessage());
-            return false;
+            throw new DataAccessException("User konnte nicht gelöscht werden", e);
         }
     }
 }

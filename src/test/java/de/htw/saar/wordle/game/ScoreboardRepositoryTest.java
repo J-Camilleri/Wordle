@@ -1,5 +1,7 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.DatabaseManager;
+import de.htw.saar.wordle.game.Database.Score.ScoreEntry;
 import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
 import org.jooq.DSLContext;
@@ -7,7 +9,6 @@ import org.jooq.impl.DSL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.sql.Connection;
 import java.util.List;
 

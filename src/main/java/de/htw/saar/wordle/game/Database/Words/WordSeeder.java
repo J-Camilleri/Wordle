@@ -1,9 +1,10 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Database.Words;
 
-import de.htw.saar.wordle.jooq.tables.Words;
+import de.htw.saar.wordle.game.Database.DatabaseManager;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.*;
 import java.io.BufferedReader;
@@ -43,7 +44,7 @@ public class WordSeeder {
                 )
             """);
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Fehler beim Erstellen der Tabellen: " + e.getMessage());
         }
     }
@@ -74,7 +75,7 @@ public class WordSeeder {
     }
 
     /** Importiert Wörter aus einer Datei in die angegebene Tabelle */
-    public static void importFile(DSLContext dsl, org.jooq.Table<?> table, String dateiPath) throws Exception {
+    public static void importFile(DSLContext dsl, org.jooq.Table<?> table, String dateiPath) {
         InputStream in = WordSeeder.class.getClassLoader().getResourceAsStream(dateiPath);
         if (in == null) {
             throw new RuntimeException("Datei nicht gefunden: " + dateiPath);
@@ -100,6 +101,8 @@ public class WordSeeder {
             });
 
             System.out.println("Importiert in " + table.getName() + ": " + words.size() + " Wörter");
+        } catch (IOException e) {
+            System.out.println("Fehler beim importieren der Wörter in die Datenbank" + e.getMessage());
         }
     }
 }

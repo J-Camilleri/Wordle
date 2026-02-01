@@ -1,5 +1,6 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.DatabaseManager;
 import de.htw.saar.wordle.game.Database.UserRepository;
 import de.htw.saar.wordle.game.LoginSystem.AuthenticationService;
 import org.junit.jupiter.api.*;

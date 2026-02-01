@@ -1,11 +1,17 @@
 package de.htw.saar.wordle.game.Database;
 
-import de.htw.saar.wordle.game.*;
+import de.htw.saar.wordle.game.Exceptions.DataAccessException;
+import de.htw.saar.wordle.game.Logic.DailyWordle;
+import de.htw.saar.wordle.game.Logic.Difficulty;
+import de.htw.saar.wordle.game.Logic.GameConfig;
+import de.htw.saar.wordle.game.Logic.Wordle;
+import de.htw.saar.wordle.game.LoginSystem.User;
 import de.htw.saar.wordle.jooq.tables.records.GamesRecord;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +29,7 @@ public class GameRepository {
 
     public boolean saveGame(int userId, Wordle game) {
         try (Connection conn = DatabaseManager.connect()){
-            if(conn == null)return false;
+            if(conn == null) return false;
 
             DSLContext dsl = DSL.using(conn);
 
@@ -58,9 +64,8 @@ public class GameRepository {
 
             record.store();
             return true;
-        } catch (Exception e) {
-        System.out.println("Fehler beim Speichern des Spiels: " + e.getMessage());
-        return false;
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim Speichern des Spiels: ",e);
         }
     }
 
@@ -103,9 +108,8 @@ public class GameRepository {
 
                         return new DailyWordle(new DailyWordleRepository(), config, user, this, gameId, targetWord, guesses);
                     });
-        }catch (Exception e){
-            System.out.println("Fehler beim Laden des Spiels: " + e.getMessage());
-            return Optional.empty();
+        }catch (SQLException e){
+            throw new DataAccessException("Fehler beim Laden des Spiels: ", e);
         }
     }
 
@@ -125,14 +129,9 @@ public class GameRepository {
 
             return status != null ? status : -1;
 
-        } catch (Exception e) {
-            System.out.println("Fehler beim Laden des Spielstatus: " + e.getMessage());
-            return -1;
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim Laden des Spielstands", e);
         }
-    }
-
-    public boolean hasUserActiveGame(int userId) {
-        return getUserGameStatus(userId) == STATUS_ACTIVE;
     }
 
     public boolean isUserGameFinished(int userId) {
@@ -152,8 +151,8 @@ public class GameRepository {
                     .where(GAMES.USER_ID.eq(userId))
                     .and(GAMES.IS_WON.eq(STATUS_ACTIVE))
                     .execute();
-        } catch (Exception e) {
-            System.out.println("Fehler beim Beenden des Spiels: " + e.getMessage());
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim beenden des Spiels", e);
         }
     }
 
@@ -174,11 +173,11 @@ public class GameRepository {
     """;
 
         try (Connection conn = DatabaseManager.connect()) {
-            if (conn == null) throw new RuntimeException("Keine Verbindung zur DB");
+            if (conn == null) throw new DataAccessException("Keine Verbindung zur DB");
             DSLContext dsl = DSL.using(conn);
             dsl.execute(sql);
-        } catch (Exception e) {
-            System.out.println("Fehler beim Erstellen der Tabelle games: " + e.getMessage());
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim erstellen der tabelle games ", e);
         }
     }
 }

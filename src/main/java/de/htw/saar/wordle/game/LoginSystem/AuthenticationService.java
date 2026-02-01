@@ -1,7 +1,6 @@
 package de.htw.saar.wordle.game.LoginSystem;
 
 import de.htw.saar.wordle.game.Database.UserRepository;
-import de.htw.saar.wordle.game.User;
 
 import java.util.Optional;
 

@@ -1,7 +1,8 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Logic;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
 import de.htw.saar.wordle.game.Presentation.Dialog;
+import de.htw.saar.wordle.game.Database.Words.WordProvider;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Languages;
 import org.languagetool.rules.Rule;

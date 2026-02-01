@@ -61,27 +61,27 @@ public class Games extends TableImpl<GamesRecord> {
     /**
      * The column <code>games.id</code>.
      */
-    public final TableField<GamesRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
+    public final TableField<GamesRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.identity(true), this, "");
 
     /**
      * The column <code>games.user_id</code>.
      */
-    public final TableField<GamesRecord, Integer> USER_ID = createField(DSL.name("user_id"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<GamesRecord, Integer> USER_ID = createField(DSL.name("user_id"), SQLDataType.INTEGER, this, "");
 
     /**
      * The column <code>games.word_id</code>.
      */
-    public final TableField<GamesRecord, Integer> WORD_ID = createField(DSL.name("word_id"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<GamesRecord, Integer> WORD_ID = createField(DSL.name("word_id"), SQLDataType.INTEGER, this, "");
 
     /**
      * The column <code>games.attempts_count</code>.
      */
-    public final TableField<GamesRecord, Integer> ATTEMPTS_COUNT = createField(DSL.name("attempts_count"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<GamesRecord, Integer> ATTEMPTS_COUNT = createField(DSL.name("attempts_count"), SQLDataType.INTEGER, this, "");
 
     /**
      * The column <code>games.is_won</code>.
      */
-    public final TableField<GamesRecord, Integer> IS_WON = createField(DSL.name("is_won"), SQLDataType.INTEGER.nullable(false), this, "");
+    public final TableField<GamesRecord, Integer> IS_WON = createField(DSL.name("is_won"), SQLDataType.INTEGER, this, "");
 
     /**
      * The column <code>games.guesses</code>.
@@ -91,7 +91,7 @@ public class Games extends TableImpl<GamesRecord> {
     /**
      * The column <code>games.difficulty</code>.
      */
-    public final TableField<GamesRecord, String> DIFFICULTY = createField(DSL.name("difficulty"), SQLDataType.CLOB.nullable(false), this, "");
+    public final TableField<GamesRecord, String> DIFFICULTY = createField(DSL.name("difficulty"), SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>games.date</code>.

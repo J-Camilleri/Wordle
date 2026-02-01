@@ -1,8 +1,11 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Logic;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
 import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Presentation.Dialog;
+import de.htw.saar.wordle.game.LoginSystem.User;
+import de.htw.saar.wordle.game.Database.Words.WordProvider;
+
 import java.util.List;
 
 public class DailyWordle extends Wordle {

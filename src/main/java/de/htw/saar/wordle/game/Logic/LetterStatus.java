@@ -1,4 +1,4 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Logic;
 
 public enum LetterStatus {
 

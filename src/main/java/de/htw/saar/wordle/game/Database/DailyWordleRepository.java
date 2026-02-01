@@ -1,4 +1,7 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Database;
+import de.htw.saar.wordle.game.Database.Words.Word;
+import de.htw.saar.wordle.game.Database.Words.WordProvider;
+import de.htw.saar.wordle.game.Exceptions.DataAccessException;
 import org.jooq.DSLContext;
 import org.jooq.Record2;
 import org.jooq.impl.DSL;
@@ -27,18 +30,13 @@ public class DailyWordleRepository implements WordProvider {
                 DSLContext dsl = org.jooq.impl.DSL.using(conn);
                 dsl.execute(dailyTableSQL);
             }
-        } catch (Exception e) {
-            System.out.println("Fehler beim Erstellen der daily_words-Tabelle: " + e.getMessage());
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim Erstellen der daily_words-Tabelle", e);
         }
     }
 
-
-//    private static String today() {
-//        return LocalDate.now().toString();
-//    }
-
     public static Word checkExistingWords(String date) {
-        try (var conn = DatabaseManager.connect()) {
+        try (Connection conn = DatabaseManager.connect()) {
             if (conn == null) return null;
 
             DSLContext dsl = org.jooq.impl.DSL.using(conn);
@@ -55,25 +53,22 @@ public class DailyWordleRepository implements WordProvider {
             }
             return null;
 
-        } catch (Exception e) {
-            System.out.println("Fehler beim Prüfen der DailyWord: " + e.getMessage());
-            return null;
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim Prüfen der DailyWord: ", e);
         }
     }
 
-    private Word getRandomWordFromDB() throws SQLException {
+    private Word getRandomWordFromDB() {
         try (Connection conn = DatabaseManager.connect()) {
-            if (conn == null) throw new SQLException("Keine Verbindung zur DB");
+            if (conn == null) throw new IllegalStateException("Keine Verbindung zur DB");
 
             DSLContext dsl = org.jooq.impl.DSL.using(conn);
-
 
             int count = dsl.fetchCount(WORDS, WORDS.IS_ACTIVE.eq(1));
             if (count == 0) throw new IllegalStateException("Keine aktiven Wörter vorhanden.");
 
-
-            int offset = (int) ((System.currentTimeMillis() / 1000 / 86400) % count);
-
+            //TODO Nach dem Projekt auf eine andere Datenbank wechseln, damit jeder das gleiche Wort bekommt
+            //TODO durch lokale Datenbank hat jeder User sein eigenes Wort auch wenn es gespeichert wird.
             Record2<Integer, String> record = dsl.select(WORDS.ID, WORDS.WORD_TEXT)
                     .from(WORDS)
                     .where(WORDS.IS_ACTIVE.eq(1))
@@ -86,18 +81,20 @@ public class DailyWordleRepository implements WordProvider {
             } else {
                 throw new IllegalStateException("Keine aktiven Wörter gefunden.");
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("DailyWord konnte nicht geladen werden", e);
         }
     }
 
-    public Word chooseRandomDailyWord() throws SQLException {
+    public Word chooseRandomDailyWord() {
         String today = LocalDate.now().toString();
 
         try (Connection conn = DatabaseManager.connect()) {
-            if (conn == null) throw new SQLException("Keine Verbindung zur DB");
+            if (conn == null) throw new IllegalStateException("Keine Verbindung zur DB");
             DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
-
-            var record = dsl.select(WORDS.ID, WORDS.WORD_TEXT)
+            var record = dsl
+                    .select(WORDS.ID, WORDS.WORD_TEXT)
                     .from(DAILY_WORDS)
                     .join(WORDS).on(DAILY_WORDS.WORD_ID.eq(WORDS.ID))
                     .where(DAILY_WORDS.WORD_DATE.eq(today))
@@ -107,9 +104,7 @@ public class DailyWordleRepository implements WordProvider {
                 return new Word(record.get(WORDS.ID), record.get(WORDS.WORD_TEXT));
             }
 
-
             Word randomWord = getRandomWordFromDB();
-
 
             dsl.insertInto(DAILY_WORDS)
                     .columns(DAILY_WORDS.WORD_DATE, DAILY_WORDS.WORD_ID)
@@ -117,15 +112,13 @@ public class DailyWordleRepository implements WordProvider {
                     .execute();
 
             return randomWord;
+        } catch (SQLException e) {
+            throw new DataAccessException("DailyWord konnte nicht geladen oder gespeichert werden", e);
         }
     }
 
     @Override
     public String getRandomWord() {
-        try {
-            return chooseRandomDailyWord().text().toUpperCase();
-        } catch (Exception e) {
-            throw new RuntimeException("DailyWord konnte nicht geladen/gespeichert werden", e);
-        }
+        return chooseRandomDailyWord().text().toUpperCase();
     }
 }
