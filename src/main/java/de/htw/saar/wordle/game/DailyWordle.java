@@ -1,6 +1,7 @@
 package de.htw.saar.wordle.game;
 
 import de.htw.saar.wordle.game.Database.GameRepository;
+import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Presentation.Dialog;
 import java.util.List;
 
@@ -29,7 +30,11 @@ public class DailyWordle extends Wordle {
         }
         //TODO brauchen wir die Methoden noch? die glückwünsche werden doch schon in der wordle rausgehauen zsm mit dem punkteverrechnen
         if (gameWon()) {
-            ui.gameWon("Du hast Gewonnen! Hurra!");
+            int points = calculatePoints();
+            ui.gameWon("Du hast Gewonnen! " + points + " Punkte wurde zu deinem Score hinzugefügt.");
+            if (getUserId() != -1) {
+                ScoreboardRepository.updateScore(getUserId(), points);
+            }
             gameRepository.finishGame(user.id(), true);
         } else {
             ui.gameLost("Keine Versuche mehr übrig. Du hast Verloren!");
