@@ -61,6 +61,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>de.htw.saar.wordle.game.Presentation.WordleStart</mainClass>
+                </configuration>
+            </plugin>
 
             <plugin>
                 <groupId>org.jooq</groupId>
@@ -103,15 +111,6 @@
                 <version>3.5.4</version>
             </plugin>
 
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.6.3</version>
-                <configuration>
-                    <!-- HIER anpassen, wenn wir Main verschieben -->
-                    <mainClass>de.htw.saar.wordle.Main</mainClass>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 </project>
