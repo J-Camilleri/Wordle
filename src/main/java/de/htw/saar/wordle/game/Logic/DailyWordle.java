@@ -31,7 +31,6 @@ public class DailyWordle extends Wordle {
             checkWord();
             gameRepository.saveGame(user.id(), this);
         }
-        //TODO brauchen wir die Methoden noch? die glückwünsche werden doch schon in der wordle rausgehauen zsm mit dem punkteverrechnen
         if (gameWon()) {
             int points = calculatePoints();
             ui.gameWon("Du hast Gewonnen! " + points + " Punkte wurde zu deinem Score hinzugefügt.");

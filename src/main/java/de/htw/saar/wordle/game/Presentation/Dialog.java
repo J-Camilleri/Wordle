@@ -21,10 +21,8 @@ public class Dialog extends UserInterface implements GameUI {
 
     private static final int DAILY_WORDLE = 1;
     private static final int PRACTICE_MODE = 2;
-
-    private static final int NEW_GAME = 1;
-    private static final int LOAD_GAME = 2;
-    private static final int END_GAME = 4;
+    private static final int END_GAME = 0;
+    private static final int GO_BACK = 3;
 
     private static final int EASY = 1;
     private static final int MEDIUM = 2;
@@ -70,9 +68,9 @@ public class Dialog extends UserInterface implements GameUI {
                 line = input.nextLine();
                 result = Integer.parseInt(line);
                 if (result < 0)
-                    System.out.println("You entered a negative integer. Please try again.");
+                    System.out.println("Bitte gebe eine Zahl größer 0 ein. Versuche es erneut!");
             } catch (NumberFormatException e) {
-                System.out.println("Error, Please enter an integer value");
+                System.out.println("Fehler, bitte geben sie gültige Zahlen ein!");
             } catch (NoSuchElementException e) {
                 System.out.println(e.getMessage());
             }
@@ -83,52 +81,54 @@ public class Dialog extends UserInterface implements GameUI {
 
     private void showLoginMenu() {
         System.out.println("Willkommen zu Wordle");
+        System.out.println("0. Beenden");
         System.out.println("1. Einloggen");
         System.out.println("2. Registrieren");
         System.out.println("3. Konto löschen");
-        System.out.println("4. Beenden");
         System.out.println("Bitte wähle eine Option aus:");
 
         int choice = readPositiveIntegerInput();
 
         switch (choice) {
+            case END_GAME -> state = State.EXIT;
             case LOGIN -> state = State.LOGIN;
             case REGISTER -> state = State.REGISTER;
             case DELETE_ACCOUNT -> state = State.DELETE_ACCOUNT;
-            case END_GAME -> state = State.EXIT;
         }
     }
 
     private void showMainMenu() {
         System.out.println("Bitte wähle eine Option aus");
+        System.out.println("0. Beenden");
         System.out.println("1. Daily Wordle");
-        System.out.println("2. Übungsmodus");
-        System.out.println("3. Beenden");
+        System.out.println("2. Übungsmodus (work in progress)");
+        System.out.println("3. Zurück");
 
         int choice = readPositiveIntegerInput();
 
         switch (choice) {
-            case DAILY_WORDLE -> state = State.DAILY_WORDLE;
-            case PRACTICE_MODE -> state = State.DIFFICULTY;
             case END_GAME -> state = State.EXIT;
+            case DAILY_WORDLE -> state = State.DAILY_WORDLE;
+            case PRACTICE_MODE -> state = State.EXIT; //Practice Mode noch nicht existent (in Arbeit)
+            case GO_BACK -> state = State.LOGIN_MENU;
         }
     }
 
     //TODO Difficulty muss noch  geändert werden auf passende methoden.
     private void showDifficultyMenu() {
         System.out.println("Bitte wähle eine Schwierigkeit aus");
+        System.out.println("0. Beenden");
         System.out.println("1. Leicht");
         System.out.println("2. Mittel");
         System.out.println("3. Schwer");
-        System.out.println("4. Beenden");
 
         int choice = readPositiveIntegerInput();
 
         switch (choice) {
+            case END_GAME -> state = State.EXIT;
             case EASY -> state = State.EXIT;
             case MEDIUM -> state = State.EXIT;
             case HARD -> state = State.EXIT;
-            case END_GAME -> state = State.EXIT;
         }
     }
 
@@ -223,5 +223,4 @@ public class Dialog extends UserInterface implements GameUI {
         System.out.println("Bitte gebe dein Wort ein:");
         return input.nextLine().toUpperCase();
     }
-
 }
