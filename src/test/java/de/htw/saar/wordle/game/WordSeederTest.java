@@ -1,5 +1,7 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.DatabaseManager;
+import de.htw.saar.wordle.game.Database.Words.WordSeeder;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;

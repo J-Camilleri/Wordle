@@ -1,4 +1,4 @@
-package de.htw.saar.wordle.game;
+package de.htw.saar.wordle.game.Presentation;
 
 public enum State {
     LOGIN_MENU,

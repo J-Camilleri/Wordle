@@ -2,6 +2,10 @@ package de.htw.saar.wordle.game;
 
 import java.time.LocalDate;
 
+import de.htw.saar.wordle.game.Database.DailyWordleRepository;
+import de.htw.saar.wordle.game.Database.DatabaseManager;
+import de.htw.saar.wordle.game.Database.Words.Word;
+import de.htw.saar.wordle.game.Database.Words.WordSeeder;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;

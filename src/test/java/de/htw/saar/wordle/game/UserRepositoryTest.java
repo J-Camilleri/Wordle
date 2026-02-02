@@ -1,7 +1,11 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.DatabaseManager;
+import de.htw.saar.wordle.game.Database.Score.ScoreEntry;
 import de.htw.saar.wordle.game.Database.ScoreboardRepository;
 import de.htw.saar.wordle.game.Database.UserRepository;
+import de.htw.saar.wordle.game.Exceptions.DataAccessException;
+import de.htw.saar.wordle.game.LoginSystem.User;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.*;
@@ -18,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class UserRepositoryTest {
 
     private UserRepository userRepo;
-    private ScoreboardRepository scoreboardRepo;
 
     private static final String TEST_DB = "wordle_test.db";
 
@@ -32,7 +35,6 @@ class UserRepositoryTest {
             DatabaseManager.dbInit();
 
             userRepo = new UserRepository();
-            scoreboardRepo = new ScoreboardRepository();
 
             try (Connection conn = DatabaseManager.connect()) {
                 if (conn == null) fail("Keine Verbindung zur DB");
@@ -80,10 +82,11 @@ class UserRepositoryTest {
     @Test
     void testRegisterUserSameName() {
         userRepo.save("carol", "hash1");
-        userRepo.save("carol", "hash2"); // sollte fehlschlagen
+        assertThrows(DataAccessException.class, () ->
+                userRepo.save("carol", "hash2")
+        ); // sollte fehlschlagen
 
         Optional<User> user = userRepo.findByUsername("carol");
-
         assertTrue(user.isPresent());
         assertEquals("carol", user.get().username());
     }
@@ -96,7 +99,7 @@ class UserRepositoryTest {
         Optional<User> user = userRepo.findByUsername("carol");
         assertTrue(user.isPresent());
 
-        List<ScoreEntry> list = scoreboardRepo.printScoreboard();
+        List<ScoreEntry> list = ScoreboardRepository.printScoreboard();
         ScoreEntry carolEntry = list.stream()
                 .filter(e -> e.username().equals("carol"))
                 .findFirst()

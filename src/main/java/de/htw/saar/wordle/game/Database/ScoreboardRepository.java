@@ -1,7 +1,7 @@
 package de.htw.saar.wordle.game.Database;
 
-import de.htw.saar.wordle.game.DatabaseManager;
-import de.htw.saar.wordle.game.ScoreEntry;
+import de.htw.saar.wordle.game.Database.Score.ScoreEntry;
+import de.htw.saar.wordle.game.Exceptions.DataAccessException;
 import org.jooq.DSLContext;
 
 import java.util.*;
@@ -23,15 +23,14 @@ public class ScoreboardRepository {
 
         try(Connection conn = DatabaseManager.connect()) {
             if (conn == null) {
-                System.out.println("Fehler: Verbindung zur Datenbank konnte nicht hergestellt werden.");
-                return;
+                throw new DataAccessException("Fehler: Verbindung zur Datenbank konnte nicht hergestellt werden.");
             }
 
             DSLContext dsl = org.jooq.impl.DSL.using(conn);
             dsl.execute(createScoreboardSQL);
 
-        } catch (Exception e) {
-            System.out.println("Fehler beim Erstellen des Scoreboards: " + e.getMessage());
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim Erstellen des Scoreboards: ", e);
         }
     }
 
@@ -41,8 +40,7 @@ public class ScoreboardRepository {
         try {
             Connection conn = DatabaseManager.connect();
             if (conn == null) {
-                System.out.println("Fehler: Verbindung zur Datenbank konnte nicht hergestellt werden.");
-                return result;
+                throw new DataAccessException("Fehler: Verbindung zur Datenbank konnte nicht hergestellt werden.");
             }
 
             DSLContext dsl = org.jooq.impl.DSL.using(conn);
@@ -63,8 +61,8 @@ public class ScoreboardRepository {
                 System.out.println(entry.username() + " : " + entry.score());
             }
 
-        } catch (Exception e) {
-            System.out.println("Fehler beim Laden des Scoreboards: " + e.getMessage());
+        } catch (DataAccessException e) {
+            throw new DataAccessException("Fehler beim laden des Scoreboards ", e);
         }
 
         return result;
@@ -72,7 +70,9 @@ public class ScoreboardRepository {
 
     public static void updateScore(int userId, int points) {
         try (Connection conn = DatabaseManager.connect()) {
-            if (conn == null) return;
+            if (conn == null) {
+                throw new DataAccessException("Fehler: Verbindung zur Datenbank konnte nicht hergestellt werden.");
+            }
             DSLContext dsl = org.jooq.impl.DSL.using(conn);
 
             boolean exists = dsl.fetchExists(
@@ -90,9 +90,8 @@ public class ScoreboardRepository {
                         .values(userId, points)
                         .execute();
             }
-        } catch (Exception e) {
-            System.out.println("Fehler beim Aktualisieren des Scoreboards: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) {
+            throw new DataAccessException("Fehler beim Aktualisieren des Scoreboards: ", e);
         }
     }
 

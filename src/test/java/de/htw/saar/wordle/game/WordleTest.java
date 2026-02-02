@@ -1,5 +1,7 @@
 package de.htw.saar.wordle.game;
 
+import de.htw.saar.wordle.game.Database.Words.WordProvider;
+import de.htw.saar.wordle.game.Logic.*;
 import de.htw.saar.wordle.game.Presentation.Dialog;
 import org.junit.jupiter.api.Test;
 
