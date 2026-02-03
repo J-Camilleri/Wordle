@@ -15,7 +15,7 @@ class DatabaseManagerTest {
     private static final String TEST_DB = "wordle_test.db";
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp(){
 
         DatabaseManager.setDbName(TEST_DB);
 

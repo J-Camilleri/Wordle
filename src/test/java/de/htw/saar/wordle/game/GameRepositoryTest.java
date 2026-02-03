@@ -45,11 +45,9 @@ class GameRepositoryTest {
                 if (conn == null) fail("Keine Verbindung zur DB");
                 DSLContext dsl = DSL.using(conn);
 
-                dsl.execute("PRAGMA foreign_keys = OFF");
                 dsl.deleteFrom(GAMES).execute();
                 dsl.deleteFrom(WORDS).execute();
                 dsl.deleteFrom(USERS).execute();
-                dsl.execute("PRAGMA foreign_keys = ON");
 
                 dsl.insertInto(USERS)
                         .columns(USERS.USERNAME, USERS.PASSWORD_HASH)

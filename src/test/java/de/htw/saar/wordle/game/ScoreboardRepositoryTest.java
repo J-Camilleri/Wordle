@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import static de.htw.saar.wordle.jooq.tables.Scoreboard.SCOREBOARD;
@@ -20,7 +21,6 @@ class ScoreboardRepositoryTest {
     private static final String TEST_DB = "wordle_test.db";
 
     private UserRepository userRepo;
-    private ScoreboardRepository scoreboardRepo;
 
     @BeforeEach
     void setUp() {
@@ -38,38 +38,41 @@ class ScoreboardRepositoryTest {
                 dsl.deleteFrom(SCOREBOARD).execute();
                 dsl.deleteFrom(USERS).execute();
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             fail("Konnte Tabellen nicht leeren: " + e.getMessage());
         }
 
         userRepo = new UserRepository();
-        scoreboardRepo = new ScoreboardRepository();
     }
 
     @Test
     void testUpdateScore() {
         String username = "winnerwinnerchickendinner";
         userRepo.save(username, "hash123");
-        int userId = userRepo.findByUsername(username).get().id();
+        if (userRepo.findByUsername(username).isPresent()) {
+            int userId = userRepo.findByUsername(username).get().id();
 
-        ScoreboardRepository.updateScore(userId, 10);
+            ScoreboardRepository.updateScore(userId, 10);
 
-        List<ScoreEntry> scoresAfterFirstGame = ScoreboardRepository.printScoreboard();
+            List<ScoreEntry> scoresAfterFirstGame = ScoreboardRepository.printScoreboard();
 
-        ScoreEntry entry = scoresAfterFirstGame.stream()
-                .filter(e -> e.username().equals(username))
-                .findFirst()
-                .orElseThrow();
-        assertEquals(10, entry.score(), "Punkte sollten nach dem ersten Spiel 10 sein");
+            ScoreEntry entry = scoresAfterFirstGame.stream()
+                    .filter(e -> e.username().equals(username))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(10, entry.score(), "Punkte sollten nach dem ersten Spiel 10 sein");
 
-        ScoreboardRepository.updateScore(userId, 5);
+            ScoreboardRepository.updateScore(userId, 5);
 
-        List<ScoreEntry> scoresAfterSecondGame = ScoreboardRepository.printScoreboard();
-        ScoreEntry entry2 = scoresAfterSecondGame.stream()
-                .filter(e -> e.username().equals(username))
-                .findFirst()
-                .orElseThrow();
-        assertEquals(15, entry2.score(), "Punkte sollen addiert werden (10 + 5 = 15)");
+            List<ScoreEntry> scoresAfterSecondGame = ScoreboardRepository.printScoreboard();
+            ScoreEntry entry2 = scoresAfterSecondGame.stream()
+                    .filter(e -> e.username().equals(username))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(15, entry2.score(), "Punkte sollen addiert werden (10 + 5 = 15)");
+        }else{
+            fail("Username " + username + " nicht gefunden");
+        }
     }
 
     @Test
@@ -104,7 +107,7 @@ class ScoreboardRepositoryTest {
                     ))
                     .execute();
 
-            List<ScoreEntry> scoreboard = scoreboardRepo.printScoreboard();
+            List<ScoreEntry> scoreboard = ScoreboardRepository.printScoreboard();
 
             assertEquals(3, scoreboard.size());
 
@@ -117,7 +120,7 @@ class ScoreboardRepositoryTest {
             assertEquals("alice", scoreboard.get(2).username());
             assertEquals(0, scoreboard.get(2).score());
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             fail("Test fehlgeschlagen: " + e.getMessage());
         }
     }

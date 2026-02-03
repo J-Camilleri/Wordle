@@ -1,6 +1,5 @@
 package de.htw.saar.wordle.game.Logic;
 
-import de.htw.saar.wordle.game.Database.GameRepository;
 import de.htw.saar.wordle.game.Presentation.Dialog;
 import de.htw.saar.wordle.game.Database.Words.WordProvider;
 import org.languagetool.JLanguageTool;
@@ -16,7 +15,6 @@ public class Wordle {
 
     private int gameId;
     private int userId = -1;
-    private GameRepository gameRepo;
     private Dialog ui = new Dialog();
     private final GameConfig config;
     private final String wordleWord;
@@ -103,17 +101,18 @@ public class Wordle {
         if (!wordExists(userInput) || !hasAttemptsLeft()) {
             return;
         }
-
+        // Es wird überprüft ob der Buchstabe an der richtigen Stelle steht
         for (int i = 0; i < length; i++) {
             if (userInput.charAt(i) == wordleWord.charAt(i)) {
                 board[attempt][i] = new Grid(userInput.charAt(i), LetterStatus.CORRECT);
                 used[i] = true;
             }
         }
-
+        //  Wenn es einen Buchstaben gibt der an der richtigen Stelle steht wird er nicht mehr geändert
         for(int i = 0; i < length; i++){
             if(board[attempt][i] != null) continue;
 
+            // Es wird überprüft ob der Buchstabe in dem gesuchten Wort existiert
             for (int j = 0; j < length; j++) {
                 if (!used[j] && userInput.charAt(i) == wordleWord.charAt(j)) {
                     board[attempt][i] = new Grid(userInput.charAt(i), LetterStatus.PRESENT);
@@ -122,7 +121,7 @@ public class Wordle {
                 }
             }
         }
-
+        // Wenn das Array an der Stelle i noch nicht gefüllt ist, wird der Buchstabe auf nicht existent gesetzt
         for (int i = 0; i < length; i++) {
             if (board[attempt][i] == null) {
                 board[attempt][i] = new Grid(userInput.charAt(i), LetterStatus.ABSENT);
@@ -196,15 +195,7 @@ public class Wordle {
     }
 
     public int calculatePoints(){
-        return switch (attempt){
-            case 1 -> 10;
-            case 2 -> 5;
-            case 3 -> 4;
-            case 4 -> 3;
-            case 5 -> 2;
-            case 6 -> 1;
-            default -> 0;
-        };
+        return config.getMaxAttempts() - attempt + 1;
     }
 
     public GameConfig getConfig() {
@@ -221,8 +212,5 @@ public class Wordle {
     }
     public int getUserId() {
         return userId;
-    }
-    public int getGameId() {
-        return gameId;
     }
 }

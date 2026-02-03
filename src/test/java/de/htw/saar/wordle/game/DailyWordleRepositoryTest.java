@@ -49,14 +49,14 @@ class DailyWordleRepositoryTest {
                 DSLContext dsl = DSL.using(conn);
                 dsl.deleteFrom(DAILY_WORDS).execute();
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             fail("Cleanup fehlgeschlagen: " + e.getMessage());
         }
     }
 
 
     @Test
-    void checkExistingWords() throws SQLException {
+    void checkExistingWords() {
         String today = LocalDate.now().toString();
         Word w = DailyWordleRepository.checkExistingWords(today);
 
@@ -64,7 +64,7 @@ class DailyWordleRepositoryTest {
     }
 
     @Test
-    void chooseRandomDailyWord() throws SQLException {
+    void chooseRandomDailyWord() {
         DailyWordleRepository dw = new DailyWordleRepository();
         Word first = dw.chooseRandomDailyWord();
         Word second = dw.chooseRandomDailyWord(); //muss gleich sein
@@ -74,7 +74,7 @@ class DailyWordleRepositoryTest {
     }
 
     @Test
-    void getRandomWord() throws SQLException {
+    void getRandomWord() {
         DailyWordleRepository dw = new DailyWordleRepository();
         String word = dw.getRandomWord();
 

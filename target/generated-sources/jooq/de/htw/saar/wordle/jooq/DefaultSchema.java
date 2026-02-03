@@ -6,6 +6,7 @@ package de.htw.saar.wordle.jooq;
 
 import de.htw.saar.wordle.jooq.tables.DailyWords;
 import de.htw.saar.wordle.jooq.tables.Games;
+import de.htw.saar.wordle.jooq.tables.PracticeWordleHistory;
 import de.htw.saar.wordle.jooq.tables.PracticeWords;
 import de.htw.saar.wordle.jooq.tables.Scoreboard;
 import de.htw.saar.wordle.jooq.tables.Users;
@@ -41,6 +42,11 @@ public class DefaultSchema extends SchemaImpl {
      * The table <code>games</code>.
      */
     public final Games GAMES = Games.GAMES;
+
+    /**
+     * The table <code>practice_wordle_history</code>.
+     */
+    public final PracticeWordleHistory PRACTICE_WORDLE_HISTORY = PracticeWordleHistory.PRACTICE_WORDLE_HISTORY;
 
     /**
      * The table <code>practice_words</code>.
@@ -80,6 +86,7 @@ public class DefaultSchema extends SchemaImpl {
         return Arrays.asList(
             DailyWords.DAILY_WORDS,
             Games.GAMES,
+            PracticeWordleHistory.PRACTICE_WORDLE_HISTORY,
             PracticeWords.PRACTICE_WORDS,
             Scoreboard.SCOREBOARD,
             Users.USERS,
