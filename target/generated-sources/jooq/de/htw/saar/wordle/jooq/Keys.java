@@ -6,12 +6,14 @@ package de.htw.saar.wordle.jooq;
 
 import de.htw.saar.wordle.jooq.tables.DailyWords;
 import de.htw.saar.wordle.jooq.tables.Games;
+import de.htw.saar.wordle.jooq.tables.PracticeWordleHistory;
 import de.htw.saar.wordle.jooq.tables.PracticeWords;
 import de.htw.saar.wordle.jooq.tables.Scoreboard;
 import de.htw.saar.wordle.jooq.tables.Users;
 import de.htw.saar.wordle.jooq.tables.Words;
 import de.htw.saar.wordle.jooq.tables.records.DailyWordsRecord;
 import de.htw.saar.wordle.jooq.tables.records.GamesRecord;
+import de.htw.saar.wordle.jooq.tables.records.PracticeWordleHistoryRecord;
 import de.htw.saar.wordle.jooq.tables.records.PracticeWordsRecord;
 import de.htw.saar.wordle.jooq.tables.records.ScoreboardRecord;
 import de.htw.saar.wordle.jooq.tables.records.UsersRecord;
@@ -37,6 +39,7 @@ public class Keys {
 
     public static final UniqueKey<DailyWordsRecord> DAILY_WORDS__PK_DAILY_WORDS = Internal.createUniqueKey(DailyWords.DAILY_WORDS, DSL.name("pk_daily_words"), new TableField[] { DailyWords.DAILY_WORDS.WORD_DATE }, true);
     public static final UniqueKey<GamesRecord> GAMES__PK_GAMES = Internal.createUniqueKey(Games.GAMES, DSL.name("pk_games"), new TableField[] { Games.GAMES.ID }, true);
+    public static final UniqueKey<PracticeWordleHistoryRecord> PRACTICE_WORDLE_HISTORY__PK_PRACTICE_WORDLE_HISTORY = Internal.createUniqueKey(PracticeWordleHistory.PRACTICE_WORDLE_HISTORY, DSL.name("pk_practice_wordle_history"), new TableField[] { PracticeWordleHistory.PRACTICE_WORDLE_HISTORY.ID }, true);
     public static final UniqueKey<PracticeWordsRecord> PRACTICE_WORDS__PK_PRACTICE_WORDS = Internal.createUniqueKey(PracticeWords.PRACTICE_WORDS, DSL.name("pk_practice_words"), new TableField[] { PracticeWords.PRACTICE_WORDS.ID }, true);
     public static final UniqueKey<PracticeWordsRecord> PRACTICE_WORDS__UK_PRACTICE_WORDS_60798223 = Internal.createUniqueKey(PracticeWords.PRACTICE_WORDS, DSL.name("uk_practice_words_60798223"), new TableField[] { PracticeWords.PRACTICE_WORDS.WORD_TEXT }, true);
     public static final UniqueKey<ScoreboardRecord> SCOREBOARD__PK_SCOREBOARD = Internal.createUniqueKey(Scoreboard.SCOREBOARD, DSL.name("pk_scoreboard"), new TableField[] { Scoreboard.SCOREBOARD.USER_ID }, true);
@@ -52,5 +55,6 @@ public class Keys {
     public static final ForeignKey<DailyWordsRecord, WordsRecord> DAILY_WORDS__FK_DAILY_WORDS_PK_WORDS = Internal.createForeignKey(DailyWords.DAILY_WORDS, DSL.name("fk_daily_words_pk_words"), new TableField[] { DailyWords.DAILY_WORDS.WORD_ID }, Keys.WORDS__PK_WORDS, new TableField[] { Words.WORDS.ID }, true);
     public static final ForeignKey<GamesRecord, UsersRecord> GAMES__FK_GAMES_PK_USERS = Internal.createForeignKey(Games.GAMES, DSL.name("fk_games_pk_users"), new TableField[] { Games.GAMES.USER_ID }, Keys.USERS__PK_USERS, new TableField[] { Users.USERS.ID }, true);
     public static final ForeignKey<GamesRecord, WordsRecord> GAMES__FK_GAMES_PK_WORDS = Internal.createForeignKey(Games.GAMES, DSL.name("fk_games_pk_words"), new TableField[] { Games.GAMES.WORD_ID }, Keys.WORDS__PK_WORDS, new TableField[] { Words.WORDS.ID }, true);
+    public static final ForeignKey<PracticeWordleHistoryRecord, WordsRecord> PRACTICE_WORDLE_HISTORY__FK_PRACTICE_WORDLE_HISTORY_PK_WORDS = Internal.createForeignKey(PracticeWordleHistory.PRACTICE_WORDLE_HISTORY, DSL.name("fk_practice_wordle_history_pk_words"), new TableField[] { PracticeWordleHistory.PRACTICE_WORDLE_HISTORY.WORD_ID }, Keys.WORDS__PK_WORDS, new TableField[] { Words.WORDS.ID }, true);
     public static final ForeignKey<ScoreboardRecord, UsersRecord> SCOREBOARD__FK_SCOREBOARD_PK_USERS = Internal.createForeignKey(Scoreboard.SCOREBOARD, DSL.name("fk_scoreboard_pk_users"), new TableField[] { Scoreboard.SCOREBOARD.USER_ID }, Keys.USERS__PK_USERS, new TableField[] { Users.USERS.ID }, true);
 }

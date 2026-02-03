@@ -67,7 +67,6 @@ class GameRepositoryTest {
                         .columns(WORDS.WORD_TEXT)
                         .values("APFEL")
                         .execute();
-
             }
 
         } catch (Exception e) {

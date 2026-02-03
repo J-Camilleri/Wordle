@@ -6,9 +6,9 @@ public enum State {
     REGISTER,
     DELETE_ACCOUNT,
     MAIN_MENU,
+    SCOREBOARD,
     DAILY_WORDLE,
     PRACTICE_MODE,
     DIFFICULTY,
-    GAME_START,
     EXIT,
 }

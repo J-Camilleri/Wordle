@@ -8,6 +8,7 @@ import de.htw.saar.wordle.jooq.DefaultSchema;
 import de.htw.saar.wordle.jooq.Keys;
 import de.htw.saar.wordle.jooq.tables.DailyWords.DailyWordsPath;
 import de.htw.saar.wordle.jooq.tables.Games.GamesPath;
+import de.htw.saar.wordle.jooq.tables.PracticeWordleHistory.PracticeWordleHistoryPath;
 import de.htw.saar.wordle.jooq.tables.records.WordsRecord;
 
 import java.util.Arrays;
@@ -182,6 +183,19 @@ public class Words extends TableImpl<WordsRecord> {
             _games = new GamesPath(this, null, Keys.GAMES__FK_GAMES_PK_WORDS.getInverseKey());
 
         return _games;
+    }
+
+    private transient PracticeWordleHistoryPath _practiceWordleHistory;
+
+    /**
+     * Get the implicit to-many join path to the
+     * <code>practice_wordle_history</code> table
+     */
+    public PracticeWordleHistoryPath practiceWordleHistory() {
+        if (_practiceWordleHistory == null)
+            _practiceWordleHistory = new PracticeWordleHistoryPath(this, null, Keys.PRACTICE_WORDLE_HISTORY__FK_PRACTICE_WORDLE_HISTORY_PK_WORDS.getInverseKey());
+
+        return _practiceWordleHistory;
     }
 
     @Override

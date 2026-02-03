@@ -37,6 +37,8 @@ public class DatabaseManager {
             UserRepository.createTable();
             DailyWordleRepository.createDailyTable();
             GameRepository.createGamesTable();
+            PracticeWordleRepository.createDailyTable();
+
 
         } catch (SQLException e) {
             throw new DataAccessException("Fehler beim initialisieren der Datenabank", e);

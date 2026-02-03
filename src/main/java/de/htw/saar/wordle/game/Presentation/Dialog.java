@@ -1,9 +1,6 @@
 package de.htw.saar.wordle.game.Presentation;
 
-import de.htw.saar.wordle.game.Database.DailyWordleRepository;
-import de.htw.saar.wordle.game.Database.DatabaseManager;
-import de.htw.saar.wordle.game.Database.GameRepository;
-import de.htw.saar.wordle.game.Database.UserRepository;
+import de.htw.saar.wordle.game.Database.*;
 import de.htw.saar.wordle.game.Database.Words.WordSeeder;
 import de.htw.saar.wordle.game.Logic.*;
 import de.htw.saar.wordle.game.LoginSystem.AuthenticationService;
@@ -19,18 +16,20 @@ public class Dialog extends UserInterface implements GameUI {
     private static final int REGISTER = 2;
     private static final int DELETE_ACCOUNT = 3;
 
+    private static final int END_GAME = 0;
     private static final int DAILY_WORDLE = 1;
     private static final int PRACTICE_MODE = 2;
-    private static final int END_GAME = 0;
-    private static final int GO_BACK = 3;
+    private static final int SHOW_SCOREBOARD = 3;
+    private static final int GO_BACK = 4;
 
     private static final int EASY = 1;
     private static final int MEDIUM = 2;
     private static final int HARD = 3;
+    private Difficulty selectedDifficulty;
+    final State practiceMode = State.PRACTICE_MODE;
 
     private State state = State.LOGIN_MENU;
     private boolean running = true;
-    private Wordle currentGame;
     private User loggedInUser;
     UserRepository userRepository = new UserRepository();
     GameRepository gameRepo = new GameRepository();
@@ -39,8 +38,6 @@ public class Dialog extends UserInterface implements GameUI {
 
     public Dialog() {
         input = new Scanner(System.in);
-        currentGame = null;
-
     }
 
     public void start() {
@@ -52,7 +49,9 @@ public class Dialog extends UserInterface implements GameUI {
                 case REGISTER -> handleRegister();
                 case DELETE_ACCOUNT -> handleDeleteAccount();
                 case MAIN_MENU -> showMainMenu();
+                case SCOREBOARD -> showScoreboard();
                 case DAILY_WORDLE -> handleDailyWordle();
+                case PRACTICE_MODE -> handlePracticeWordle();
                 case DIFFICULTY -> showDifficultyMenu();
                 case EXIT -> running = false;
             }
@@ -102,19 +101,20 @@ public class Dialog extends UserInterface implements GameUI {
         System.out.println("0. Beenden");
         System.out.println("1. Daily Wordle");
         System.out.println("2. Übungsmodus (work in progress)");
-        System.out.println("3. Zurück");
+        System.out.println("3. Scoreboard anzeigen");
+        System.out.println("4. Zurück");
 
         int choice = readPositiveIntegerInput();
 
         switch (choice) {
             case END_GAME -> state = State.EXIT;
             case DAILY_WORDLE -> state = State.DAILY_WORDLE;
-            case PRACTICE_MODE -> state = State.EXIT; //Practice Mode noch nicht existent (in Arbeit)
+            case PRACTICE_MODE -> state = State.DIFFICULTY;
+            case SHOW_SCOREBOARD -> state = State.SCOREBOARD;
             case GO_BACK -> state = State.LOGIN_MENU;
         }
     }
 
-    //TODO Difficulty muss noch  geändert werden auf passende methoden.
     private void showDifficultyMenu() {
         System.out.println("Bitte wähle eine Schwierigkeit aus");
         System.out.println("0. Beenden");
@@ -126,9 +126,18 @@ public class Dialog extends UserInterface implements GameUI {
 
         switch (choice) {
             case END_GAME -> state = State.EXIT;
-            case EASY -> state = State.EXIT;
-            case MEDIUM -> state = State.EXIT;
-            case HARD -> state = State.EXIT;
+            case EASY -> {
+                selectedDifficulty = Difficulty.EASY;
+                state = practiceMode;
+            }
+            case MEDIUM -> {
+                selectedDifficulty = Difficulty.NORMAL;
+                state = practiceMode;
+            }
+            case HARD -> {
+                selectedDifficulty = Difficulty.HARD;
+                state = practiceMode;
+            }
         }
     }
 
@@ -196,6 +205,29 @@ public class Dialog extends UserInterface implements GameUI {
         state = State.EXIT;
     }
 
+    private void handlePracticeWordle() {
+        WordSeeder.fillIfEmpty();
+        PracticeWordle game = new PracticeWordle(
+                new PracticeWordleRepository(),
+                GameConfig.createThroughDifficulty(selectedDifficulty),
+                loggedInUser,
+                gameRepo
+        );
+        game.gameLoop();
+        state = State.MAIN_MENU;
+    }
+
+    private void showScoreboard() {
+        ScoreboardRepository.printScoreboard();
+        System.out.println("Press some key to go back");
+        try {
+            input.nextLine();
+        } catch (NoSuchElementException e) {
+            System.out.println(e.getMessage());
+        }
+        state = State.MAIN_MENU;
+    }
+
     @Override
     public void gameWon(String message) {
         System.out.println(message);
@@ -203,7 +235,7 @@ public class Dialog extends UserInterface implements GameUI {
         try {
             input.next();
         } catch (NoSuchElementException e) {
-            System.out.println(e);
+            System.out.println(e.getMessage());
         }
     }
 
@@ -214,7 +246,7 @@ public class Dialog extends UserInterface implements GameUI {
         try {
             input.next();
         } catch (NoSuchElementException e) {
-            System.out.println(e);
+            System.out.println(e.getMessage());
         }
     }
 
