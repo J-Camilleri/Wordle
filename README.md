@@ -8,7 +8,7 @@ durch Eingabe gültiger deutscher Wörter, ein täglich wechselndes Wort zu erra
 
 Nach jedem Versuch werden dem Spieler Hinweise darüber gegeben,  
 ob Buchstaben im gesuchten Wort enthalten sind  
-und ob sie sich an der richtigen Stelle befinden.  
+und ob sie diese sich an der richtigen Stelle befinden.  
 
 
 
@@ -21,11 +21,50 @@ und ob sie sich an der richtigen Stelle befinden.
 - Validierung der Benutzereingaben (nur gültige Wörter)  
 - Anzeige von Hinweisen nach jeder Eingabe  
 - Scoreboard zur Anzeige aller Spieler mit ihren Punkten  
+- PracticeMode zum wiederholten Spielen an einem Tag
 - Automatisierte Tests  
 - CI-Pipeline zur Qualitätssicherung  
 
 ## Projektstruktur
-*Wenn wir in packages refactored haben*
+
+## Projektstruktur
+```
+src/main/java/de/htw/saar/wordle
+├── game
+│   ├── Database
+│   │   ├── Score
+│   │   │   └── ScoreEntry.java
+│   │   ├── Words
+│   │   │   ├── Word.java
+│   │   │   ├── WordProvider.java
+│   │   │   └── WordSeeder.java
+│   │   ├── DailyWordleRepository.java
+│   │   ├── DatabaseManager.java
+│   │   ├── GameRepository.java
+│   │   ├── PracticeWordleRepository.java
+│   │   ├── ScoreboardRepository.java
+│   │   └── UserRepository.java
+│   ├── Exceptions
+│   │   └── DataAccessException.java
+│   ├── Logic
+│   │   ├── DailyWordle.java
+│   │   ├── Difficulty.java
+│   │   ├── GameConfig.java
+│   │   ├── GameUI.java
+│   │   ├── Grid.java
+│   │   ├── LetterStatus.java
+│   │   ├── PracticeWordle.java
+│   │   └── Wordle.java
+│   ├── LoginSystem
+│   │   ├── User.java
+│   │   ├── AuthenticationService.java
+│   │   └── PasswordHashing.java
+│   └── Presentation
+│       ├── Dialog.java
+│       ├── State.java
+│       ├── UserInterface.java
+│       └── WordleStart.java
+```
 
 ## Voraussetzungen
 - Java Development Kit (JDK) **21**  
@@ -40,24 +79,29 @@ wird für den jOOQ-Codegenerator verwendet (`jdbc:sqlite:wordle.db`).
 ## Installation & Start:
 1) Projekt Klonen: ```bash
 git clone https://github.com/J-Camilleri/Wordle```
-2) Projekt bauen: ```mvn clean install``` 
-3) Anwendung starten: ```mvn exec:java``` --> **GEHT NOCH NICHT**
+```cd Wordle```
 
-*Alternativ kann das Projekt direkt in IntelliJ importiert und gestartet werden*
+2) Projekt bauen: ```mvn clean install``` 
+3) Anwendung starten: ```mvn exec:java```
+
+*Alternativ kann das Projekt direkt in IntelliJ importiert und gestartet werden.*
 
 ## Tests
 Automatisierte Tests werden mit **JUnit 5** durchgeführt: mvn test  
-(Alle Tests werden zusätzlich über eine CI-Pipeline bei jedem Push ausgeführt)   
+(Alle Tests werden zusätzlich über eine CI-Pipeline bei jedem Push ausgeführt).
 
 ## Datenbank
 Verwendet wird **SQLite**  
-(Die Datenbank wird über die Datei Wordle.db mitgeliefert)  
+(Die Datenbank wird über die Datei Wordle.db mitgeliefert).
 Diese Datenbank enthält die Tabellen: 
 - words  
 - daily_words  
 - games  
 - users  
 - scores  
+
+Falls Tabellen noch nicht existieren, werden sie beim Start des Spiels automatisch angelegt.
+
 
 ## Verwendete Technologien
 - Java (JDK 21)
