@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 
+
 import static de.htw.saar.wordle.jooq.Tables.PRACTICE_WORDLE_HISTORY;
 import static de.htw.saar.wordle.jooq.tables.Words.WORDS;
 
