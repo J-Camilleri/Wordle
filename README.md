@@ -25,7 +25,43 @@ und ob sie sich an der richtigen Stelle befinden.
 - CI-Pipeline zur Qualitätssicherung  
 
 ## Projektstruktur
-*Wenn wir in packages refactored haben*
+```
+src/main/java/de/htw/saar/wordle
+├── game
+│   ├── Database
+│   │   ├── Score
+│   │   │   └── ScoreEntry.java
+│   │   ├── Words
+│   │   │   ├── Word.java
+│   │   │   ├── WordProvider.java
+│   │   │   └── WordSeeder.java
+│   │   ├── DailyWordleRepository.java
+│   │   ├── DatabaseManager.java
+│   │   ├── GameRepository.java
+│   │   ├── PracticeWordleRepository.java
+│   │   ├── ScoreboardRepository.java
+│   │   └── UserRepository.java
+│   ├── Exceptions
+│   │   └── DataAccessException.java
+│   ├── Logic
+│   │   ├── DailyWordle.java
+│   │   ├── Difficulty.java
+│   │   ├── GameConfig.java
+│   │   ├── GameUI.java
+│   │   ├── Grid.java
+│   │   ├── LetterStatus.java
+│   │   ├── PracticeWordle.java
+│   │   └── Wordle.java
+│   ├── LoginSystem
+│   │   ├── User.java
+│   │   ├── AuthenticationService.java
+│   │   └── PasswordHashing.java
+│   └── Presentation
+│       ├── Dialog.java
+│       ├── State.java
+│       ├── UserInterface.java
+│       └── WordleStart.java
+```
 
 ## Voraussetzungen
 - Java Development Kit (JDK) **21**  
@@ -40,8 +76,9 @@ wird für den jOOQ-Codegenerator verwendet (`jdbc:sqlite:wordle.db`).
 ## Installation & Start:
 1) Projekt Klonen: ```bash
 git clone https://github.com/J-Camilleri/Wordle```
+```cd Wordle```
 2) Projekt bauen: ```mvn clean install``` 
-3) Anwendung starten: ```mvn exec:java``` --> **GEHT NOCH NICHT**
+3) Anwendung starten: ```mvn exec:java``` 
 
 *Alternativ kann das Projekt direkt in IntelliJ importiert und gestartet werden*
 
